@@ -1,0 +1,2622 @@
+<!-- OWNER: claude · LAST: claude 2026-10-11 · Dis-la pronunciation trainer, standalone page, mic needs Chrome/Safari at its own address -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="Dis-la: French pronunciation and accent trainer. Everything is computed on this device.">
+<title>Dis-la</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a3453a'/%3E%3Crect x='12' y='6' width='8' height='14' rx='4' fill='none' stroke='%23f7f5f1' stroke-width='2.4'/%3E%3Cpath d='M8 15a8 8 0 0 0 16 0M16 23v4' fill='none' stroke='%23f7f5f1' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500&family=Lato:wght@400;700&display=swap">
+<style>
+/* Dis-la. Register: Desk (a screen Fan works in) inside the Français Quotidien visual family:
+   same palette tokens, Playfair Display + Lato, 2px ink borders, 3px radius, pressable offset
+   shadows. Every colour is a token. Dark mode: prefers-color-scheme, or [data-theme]. */
+:root{
+  color-scheme:light;
+  --paper:#f7f5f1; --card:#fffdf9; --panel:#ece8e0;
+  --ink:#1a1a1a; --ink2:#6e6b65; --label:#6b685f; --hair:#d8d5cf;
+  --green:#3a7a5a; --ochre:#9a6a20; --blue:#4a7ab5; --redbrown:#a3453a; --violet:#6a4a9a; --sand:#b5ad94; --teal:#2a7a78;
+  --on:#1c1a17;
+  --t-green:rgba(58,122,90,.15); --t-red:rgba(163,69,58,.13); --t-ochre:rgba(154,106,32,.16); --t-ink:rgba(26,26,26,.06);
+  --disp:"Playfair Display",Georgia,"Times New Roman",serif;
+  --body:"Lato","Helvetica Neue",Arial,sans-serif;
+  --mono:"Courier New",Courier,monospace;
+  --dockh:104px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --paper:#141414; --card:#1f1e1c; --panel:#2a2926;
+    --ink:#ece8e0; --ink2:#a49d92; --label:#8b857a; --hair:#2c2c2a;
+    --green:#6cb98d; --ochre:#c89b4a; --blue:#7ba7dd; --redbrown:#d9756a; --violet:#a58bd6; --sand:#b5ad94; --teal:#5bb3b0;
+    --t-green:rgba(108,185,141,.18); --t-red:rgba(217,117,106,.17); --t-ochre:rgba(200,155,74,.2); --t-ink:rgba(236,232,224,.07);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --paper:#141414; --card:#1f1e1c; --panel:#2a2926;
+  --ink:#ece8e0; --ink2:#a49d92; --label:#8b857a; --hair:#2c2c2a;
+  --green:#6cb98d; --ochre:#c89b4a; --blue:#7ba7dd; --redbrown:#d9756a; --violet:#a58bd6; --sand:#b5ad94; --teal:#5bb3b0;
+  --t-green:rgba(108,185,141,.18); --t-red:rgba(217,117,106,.17); --t-ochre:rgba(200,155,74,.2); --t-ink:rgba(236,232,224,.07);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--paper)}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:14px;line-height:1.5;overflow-x:hidden;
+  -webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{touch-action:manipulation}
+[hidden]{display:none!important}
+svg{display:block;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{max-width:480px;margin:0 auto;padding:max(12px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(var(--dockh) + 28px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.lb{font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--label);margin:0}
+.plain{margin:0;font-size:14px;line-height:1.45;color:var(--ink)}
+.mut{color:var(--ink2)}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+
+/* header */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:2px 0 12px}
+h1{font-family:var(--disp);font-weight:400;font-size:32px;line-height:1;margin:0}
+.theme{display:flex;border:2px solid var(--ink);border-radius:3px;overflow:hidden;background:var(--card)}
+.theme button{width:36px;height:34px;border:0;background:none;color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.theme button+button{border-left:2px solid var(--ink)}
+.theme button svg{width:17px;height:17px}
+.theme button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.note{margin:0 0 12px;padding:9px 12px;border:2px solid var(--redbrown);border-radius:3px;background:var(--t-red);font-size:13.5px;line-height:1.4}
+
+/* segmented */
+.seg{display:flex;border:2px solid var(--ink);border-radius:3px;overflow:hidden;background:var(--card)}
+.seg button{flex:1;white-space:nowrap;min-height:44px;border:0;background:none;font-weight:700;font-size:13px;letter-spacing:.05em;color:var(--ink);cursor:pointer;padding:0 8px}
+.seg button+button{border-left:2px solid var(--ink)}
+.seg button[aria-selected=true],.seg button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.seg.sm button{min-height:36px;font-size:12px}
+#modes{margin-bottom:16px}
+
+/* cards */
+.card{border:2px solid var(--ink);border-radius:4px;background:var(--card);padding:14px;margin:0 0 14px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.wrapr{flex-wrap:wrap}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 14px;border:2px solid var(--ink);border-radius:3px;background:var(--card);color:var(--ink);
+  font-weight:700;font-size:13px;letter-spacing:.03em;cursor:pointer;box-shadow:0 3px 0 var(--ink);transition:transform .07s,box-shadow .07s}
+.btn:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.btn svg{width:18px;height:18px}
+.btn.sm{min-height:36px;padding:0 10px;font-size:12px}
+.btn[disabled]{opacity:.45;cursor:default}
+.rbtn{width:44px;height:44px;border-radius:50%;padding:0}
+.rbtn svg{width:20px;height:20px}
+.spk{width:44px;height:44px;flex:none;border:2px solid var(--ink);border-radius:50%;background:var(--ochre);color:var(--on);cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 3px 0 var(--ink);transition:transform .07s,box-shadow .07s}
+.spk:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.spk svg{width:19px;height:19px;stroke:var(--on)}
+.spk.on{background:var(--green)}
+.spk.sm{width:34px;height:34px;box-shadow:0 2px 0 var(--ink)}
+.spk.sm:active{box-shadow:0 0 0 var(--ink);transform:translateY(2px)}
+.spk.sm svg{width:15px;height:15px}
+.sw{position:relative;width:48px;height:28px;border-radius:14px;border:2px solid var(--ink);background:var(--panel);cursor:pointer;flex:none;padding:0;transition:background .15s}
+.sw::after{content:"";position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:var(--ink);transition:transform .15s,background .15s}
+.sw[aria-checked=true]{background:var(--green)}
+.sw[aria-checked=true]::after{transform:translateX(20px);background:var(--paper)}
+.sw[disabled]{opacity:.4;cursor:default}
+.swrow{display:flex;align-items:center;gap:10px;min-height:44px}
+.swrow span{font-size:13.5px}
+
+/* dock: record button bottom-left (left thumb) */
+#dock{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--paper);border-top:2px solid var(--ink)}
+.dockin{max-width:480px;margin:0 auto;display:flex;align-items:center;gap:12px;
+  padding:10px max(16px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.rec{position:relative;width:72px;height:72px;flex:none;border-radius:50%;border:2px solid var(--ink);background:var(--redbrown);color:var(--paper);cursor:pointer;padding:0;
+  display:flex;align-items:center;justify-content:center;box-shadow:0 4px 0 var(--ink);transition:transform .07s,box-shadow .07s}
+.rec:active{transform:translateY(4px);box-shadow:0 0 0 var(--ink)}
+.rec svg{width:30px;height:30px;stroke:var(--paper)}
+.rec[aria-disabled=true]{opacity:.4}
+.rec.live::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:2px solid var(--redbrown);animation:ring 1.3s ease-out infinite}
+@keyframes ring{0%{transform:scale(.88);opacity:.9}100%{transform:scale(1.18);opacity:0}}
+.dockside{flex:1;min-width:0;display:flex;align-items:center;gap:8px}
+.act{display:flex;flex-direction:column;align-items:center;gap:3px;background:none;border:0;padding:0;cursor:pointer;color:var(--ink);min-width:56px}
+.act .rbtn{box-shadow:0 3px 0 var(--ink)}
+.act small{font-weight:700;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);white-space:nowrap}
+.act:active .rbtn{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.act .rbtn.on{background:var(--green);color:var(--on)}
+.act[disabled]{opacity:.35;cursor:default}
+.hint{font-size:13px;color:var(--ink2);margin:0;line-height:1.35}
+.meterbox{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.meter{height:12px;border:2px solid var(--ink);border-radius:3px;background:var(--card);overflow:hidden}
+.meter i{display:block;height:100%;width:calc(var(--lvl,0)*100%);background:var(--green);transition:width .06s linear}
+.meter.hot i{background:var(--redbrown)}
+.meterbox small{font-size:12px;color:var(--ink2);font-variant-numeric:tabular-nums}
+
+/* Phrases */
+.sentcount{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sent-text{font-family:var(--disp);font-size:27px;line-height:1.22;margin:0 0 10px;overflow-wrap:anywhere}
+.ipa-row{display:flex;align-items:center;gap:12px;margin:0 0 12px}
+.ipa-line{flex:1;min-width:0;font-family:var(--mono);font-size:12.5px;color:var(--ink2);letter-spacing:.01em;overflow-wrap:anywhere}
+.navrow{display:flex;align-items:center;gap:10px;margin:0 0 12px}
+.navrow .cnt{font-variant-numeric:tabular-nums;font-size:12px;color:var(--ink2)}
+.field{width:100%;min-height:46px;border:2px solid var(--ink);border-radius:3px;background:var(--paper);padding:8px 12px;font-size:16px;font-family:var(--body)}
+.field::placeholder{color:var(--label)}
+.voicerow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:0 0 12px}
+.voicerow select{min-height:36px;border:2px solid var(--ink);border-radius:3px;background:var(--card);padding:0 8px;font-size:13px;max-width:100%}
+.strip{margin:0 0 14px}
+.strip .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;min-height:40px;border:2px solid var(--ink);border-radius:3px;background:var(--card);padding:0 10px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 2px 0 var(--ink)}
+.chip:active{transform:translateY(2px);box-shadow:none}
+.chip .sym{font-family:var(--mono);font-weight:400;font-size:14px}
+.chip .n{background:var(--ink);color:var(--paper);border-radius:10px;min-width:20px;padding:0 6px;text-align:center;font-size:11px;line-height:20px}
+.chip svg{width:14px;height:14px}
+
+/* result blocks */
+.blk{border:2px solid var(--ink);border-radius:4px;background:var(--card);padding:12px 14px;margin:0 0 12px}
+.blk-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 10px}
+.tag{font-weight:700;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;border:1.5px solid var(--label);color:var(--ink2);border-radius:20px;padding:1px 8px}
+.tag.ok{border-color:var(--green);color:var(--green)}
+.tag.warn{border-color:var(--ochre);color:var(--ochre)}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.wp{display:inline-flex;flex-direction:column;align-items:flex-start;border:2px solid var(--green);background:var(--t-green);border-radius:3px;padding:3px 10px 4px;font-family:var(--disp);font-size:19px;line-height:1.25}
+.wp.bad{border-color:var(--redbrown);background:var(--t-red)}
+.wp small{font-family:var(--body);font-weight:700;font-size:11px;color:var(--redbrown);line-height:1.2;margin-top:1px}
+.wp.dim{border-color:var(--hair);background:var(--t-ink)}
+.stats{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:8px;margin:0 0 10px}
+.stat{border:1.5px solid var(--hair);border-radius:3px;padding:7px 8px 6px;min-width:0}
+.stat b{display:block;font-family:var(--disp);font-weight:400;font-size:25px;line-height:1.05;font-variant-numeric:tabular-nums}
+.stat small{display:block;font-weight:700;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--label);margin-top:2px}
+.stat i{display:block;font-style:normal;font-size:11.5px;color:var(--ink2);margin-top:2px;line-height:1.25}
+.gauge{margin-top:5px}
+.fix{display:flex;gap:12px;align-items:flex-start}
+.fixicon{flex:none;width:34px;height:34px;border-radius:50%;background:var(--ochre);display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:15px;color:var(--on);border:2px solid var(--ink)}
+.fix h3{font-family:var(--disp);font-weight:400;font-size:21px;line-height:1.15;margin:0 0 4px}
+.fix p{margin:0 0 8px}
+.words{display:flex;flex-wrap:wrap;gap:8px}
+.wchip{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--ink);border-radius:3px;background:var(--paper);padding:2px 4px 2px 10px;font-family:var(--disp);font-size:16px;min-height:34px}
+.cap{font-size:11.5px;color:var(--ink2);margin:6px 0 0}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--ink2);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:8px;border-radius:2px;margin-right:5px;vertical-align:0}
+.svgbox{width:100%}
+.svgbox svg{width:100%;height:auto;overflow:visible}
+svg text{font-family:var(--mono);fill:var(--ink2);stroke:none}
+.seg-line{margin:0 0 6px}
+.altline{font-size:12.5px;color:var(--ink2);margin:2px 0 0}
+.altline b{color:var(--ink)}
+.uncl{border-bottom:2px dotted var(--redbrown)}
+
+/* Sons */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;min-height:68px;padding:8px 12px;border:2px solid var(--ink);border-radius:3px;background:var(--card);cursor:pointer;text-align:left;box-shadow:0 3px 0 var(--ink);transition:transform .07s,box-shadow .07s}
+.tile:active{transform:translateY(3px);box-shadow:0 0 0 var(--ink)}
+.tile b{font-family:var(--disp);font-weight:400;font-size:22px;line-height:1.1}
+.tile span{font-family:var(--mono);font-size:12px;color:var(--ink2);white-space:pre}
+.tile[aria-pressed=true]{background:var(--t-ochre);border-color:var(--ink)}
+.tile[aria-pressed=true] b{text-decoration:underline;text-decoration-color:var(--ochre);text-decoration-thickness:3px;text-underline-offset:4px}
+.tile.wide{grid-column:span 2}
+.modelrow{display:flex;align-items:center;gap:12px;margin:12px 0 10px}
+.modelrow .w{font-family:var(--disp);font-size:34px;line-height:1.05}
+.modelrow .ipa-line{flex:none;font-size:14px}
+.pair{font-size:12.5px;color:var(--ink2);margin:0 0 10px;display:flex;align-items:center;gap:8px}
+.verdict{margin:10px 0 0;font-size:15px;font-weight:700}
+.verdict.ok{color:var(--green)}
+.verdict.bad{color:var(--redbrown)}
+.nums{font-family:var(--mono);font-size:12px;color:var(--ink2);margin:4px 0 0}
+
+/* footer */
+.foot{margin-top:18px;border-top:1px solid var(--hair);padding-top:12px}
+.foot p{margin:0 0 10px;font-size:12px;color:var(--ink2);line-height:1.45}
+.foot .row{gap:10px;flex-wrap:wrap}
+.foot textarea{width:100%;min-height:120px;border:2px solid var(--ink);border-radius:3px;background:var(--paper);font-family:var(--mono);font-size:12px;padding:8px;margin-top:10px}
+.toast{position:fixed;left:16px;right:16px;bottom:calc(var(--dockh) + 18px + env(safe-area-inset-bottom));display:flex;justify-content:center;pointer-events:none;z-index:30}
+.toast div{background:var(--ink);color:var(--paper);border-radius:999px;padding:9px 16px;font-weight:700;font-size:13px;max-width:100%;text-align:center}
+.busy{display:flex;align-items:center;gap:10px;color:var(--ink2);font-size:13.5px;margin:0 0 12px}
+.dots{display:inline-flex;gap:4px}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--ink2);animation:dot 1s infinite}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes dot{0%,80%,100%{opacity:.25}40%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media print{#dock{display:none}}
+
+/* chart + gauge parts (SVG) */
+.g-track{fill:var(--hair);stroke:none}.g-zone{fill:var(--green);opacity:.4;stroke:none}.g-mark{fill:var(--ink);stroke:none}
+.axis{stroke:var(--ink);stroke-width:1.5}
+.bar{fill:var(--ink);stroke:none;opacity:.85}.bar.last{fill:var(--ochre);opacity:1}
+.m-band{fill:var(--ochre);opacity:.22;stroke:none}
+.m-grid{stroke:var(--hair);stroke-width:1}
+.m-zero{stroke:var(--label);stroke-width:1;stroke-dasharray:3 4}
+.m-line{fill:none;stroke:var(--ink);stroke-width:2.4}
+.m-end{fill:none;stroke-width:4.5}.m-end.ok{stroke:var(--green)}.m-end.bad{stroke:var(--redbrown)}.m-end.neu{stroke:var(--ochre)}
+.m-dot{stroke:var(--card);stroke-width:2}.m-dot.ok{fill:var(--green)}.m-dot.bad{fill:var(--redbrown)}.m-dot.neu{fill:var(--ochre)}
+.m-frame{fill:var(--ink);opacity:.3;stroke:none}
+.c-frame{fill:none;stroke:var(--ink);stroke-width:1.5}
+.z-oth{fill:var(--t-ink);stroke:var(--hair);stroke-width:1}
+.z-mate{fill:none;stroke:var(--ink);stroke-width:1.2;stroke-dasharray:4 3}
+.z-tgt{fill:var(--t-ochre);stroke:var(--ochre);stroke-width:2.2}
+svg text.zl{fill:var(--ink2);stroke:var(--card);stroke-width:3px;paint-order:stroke;stroke-linejoin:round}svg text.zl.t{fill:var(--ink);font-weight:700}
+.lg-band{background:var(--ochre);opacity:.45}.lg-line{background:var(--ink);height:3px!important;vertical-align:2px}
+
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Dis-la</h1>
+    <div class="theme" id="theme" role="group" aria-label="Colour theme"></div>
+  </header>
+  <p class="note" id="micNote" role="status" hidden></p>
+  <div class="seg" id="modes" role="tablist" aria-label="Mode"></div>
+  <main id="screen">
+    <section id="m-phrases" role="tabpanel" aria-label="Phrases"></section>
+    <section id="m-sons" role="tabpanel" aria-label="Sons" hidden></section>
+    <section id="m-libre" role="tabpanel" aria-label="Libre" hidden></section>
+  </main>
+  <footer class="foot" id="foot"></footer>
+</div>
+<nav id="dock" aria-label="Recording"><div class="dockin" id="dockin"></div></nav>
+<div class="toast" id="toast" hidden><div></div></div>
+
+<script id="dsp-section">
+/* ==========================================================================================
+   DSP SECTION: pure functions, no DOM, no globals. The same code runs in the browser and in
+   the Node unit tests (the test file extracts this <script> from the finished page).
+
+   KNOWN LIMITS (read before trusting any number):
+   - Everything here is an ESTIMATE from one microphone take. Nothing was calibrated against
+     human listeners or against a reference corpus of French speakers. Only synthetic signals
+     and a robotic eSpeak French voice were used to check the code.
+   - Syllable nuclei: found from the energy of the 300 to 3000 Hz band. Fast, vowel-to-vowel
+     sequences (j'ai eu, il y a) can merge into one peak, and very weak syllables (le, de, je)
+     can be missed. Loud fricatives or plosive bursts can add a false one (a voicing check
+     reduces this, it does not remove it).
+   - Pitch (YIN): fails on creaky voice, whisper, very noisy rooms, and for voices far outside
+     the adaptive range found in the take. Octave jumps are limited by the adaptive range, not
+     impossible. The ending (rising/falling/flat) uses only the last ~300 ms of voiced frames.
+     A short final rise that sits on a quiet last sound (an r, a whispered end) can be missed or
+     outweighed by the fall before it. The pitch is tracked at 8 kHz, so it is exact for
+     ordinary voices and unreliable above about 450 Hz.
+   - Formants (LPC, order 12 at 11.025 kHz): good for steady vowels with a low or medium
+     pitch. With a high pitch (above ~200 Hz) the first formant tends to lock onto a harmonic
+     and F1 is unreliable. The reference vowel areas are approximate adult male averages.
+   - Speech rate and evenness are computed from the detected nuclei, so they inherit every
+     error above. The 4 to 6 syllables per second range and the evenness bands are rules of
+     thumb, not measured norms.
+   ========================================================================================== */
+var DSP = (function () {
+  'use strict';
+
+  var TWO_PI = 2 * Math.PI;
+
+  /* ---------- small helpers ---------- */
+  function median(a) {
+    var n = a.length;
+    if (!n) return NaN;
+    var b = Array.prototype.slice.call(a).sort(function (x, y) { return x - y; });
+    return n % 2 ? b[(n - 1) / 2] : (b[n / 2 - 1] + b[n / 2]) / 2;
+  }
+  function percentile(a, p) {
+    var n = a.length;
+    if (!n) return NaN;
+    var b = Array.prototype.slice.call(a).sort(function (x, y) { return x - y; });
+    var k = (n - 1) * p, f = Math.floor(k), c = Math.min(n - 1, f + 1);
+    return b[f] + (b[c] - b[f]) * (k - f);
+  }
+  function mean(a) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i]; return a.length ? s / a.length : NaN; }
+  function std(a) {
+    if (a.length < 2) return 0;
+    var m = mean(a), s = 0;
+    for (var i = 0; i < a.length; i++) s += (a[i] - m) * (a[i] - m);
+    return Math.sqrt(s / a.length);
+  }
+  function rmsOf(x, a, b) {
+    a = a || 0; b = b == null ? x.length : b;
+    var s = 0, n = Math.max(1, b - a);
+    for (var i = a; i < b; i++) s += x[i] * x[i];
+    return Math.sqrt(s / n);
+  }
+  function concatChunks(chunks, total) {
+    var out = new Float32Array(total), o = 0;
+    for (var i = 0; i < chunks.length; i++) { out.set(chunks[i], o); o += chunks[i].length; }
+    return out;
+  }
+
+  /* ---------- resampling: windowed-sinc low-pass + interpolation ---------- */
+  function resample(x, srIn, srOut) {
+    if (srIn === srOut) return x;
+    var r = srIn / srOut;
+    var nOut = Math.max(0, Math.floor(x.length / r));
+    var y = new Float32Array(nOut);
+    if (r <= 1) { // up-sampling: linear (not used by the app, kept complete)
+      for (var m = 0; m < nOut; m++) {
+        var p = m * r, i0 = Math.floor(p), fr = p - i0;
+        y[m] = (x[i0] || 0) * (1 - fr) + (x[i0 + 1] || 0) * fr;
+      }
+      return y;
+    }
+    var fc = 0.45 / r;              // cutoff in cycles per input sample (90 % of the new Nyquist)
+    var L = Math.ceil(Math.max(8 * r, 12)) + 2;   // half width in input samples
+    // kernel (sinc times Blackman window) tabulated at 1/OS sample steps, linear interpolation inside
+    var OS = 256, tab = new Float64Array(2 * L * OS + 2), q, k;
+    for (q = 0; q < tab.length; q++) {
+      var d0 = q / OS - L, u0 = d0 / L;
+      var h0 = d0 === 0 ? 2 * fc : Math.sin(TWO_PI * fc * d0) / (Math.PI * d0);
+      tab[q] = Math.abs(u0) > 1 ? 0 : h0 * (0.42 + 0.5 * Math.cos(Math.PI * u0) + 0.08 * Math.cos(2 * Math.PI * u0));
+    }
+    for (var m2 = 0; m2 < nOut; m2++) {
+      var t = m2 * r, i1 = Math.floor(t), acc = 0, wsum = 0;
+      var k0 = Math.max(0, i1 - L + 1), k1 = Math.min(x.length - 1, i1 + L);
+      for (k = k0; k <= k1; k++) {
+        var pos = (t - k + L) * OS, qi = pos | 0, fr2 = pos - qi;
+        var hw = tab[qi] + (tab[qi + 1] - tab[qi]) * fr2;
+        acc += x[k] * hw; wsum += hw;
+      }
+      y[m2] = wsum !== 0 ? acc / wsum : 0;           // unity DC gain
+    }
+    return y;
+  }
+
+  /* ---------- RBJ biquads, band-pass built from 2 x high-pass + 2 x low-pass ---------- */
+  function biquadCoefs(type, fc, fs, Q) {
+    var w0 = TWO_PI * fc / fs, cw = Math.cos(w0), sw = Math.sin(w0), al = sw / (2 * Q), b0, b1, b2;
+    if (type === 'lp') { b0 = (1 - cw) / 2; b1 = 1 - cw; b2 = (1 - cw) / 2; }
+    else { b0 = (1 + cw) / 2; b1 = -(1 + cw); b2 = (1 + cw) / 2; }
+    var a0 = 1 + al;
+    return { b0: b0 / a0, b1: b1 / a0, b2: b2 / a0, a1: -2 * cw / a0, a2: (1 - al) / a0 };
+  }
+  function biquadRun(x, c) {
+    var y = new Float32Array(x.length), x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+    for (var i = 0; i < x.length; i++) {
+      var v = c.b0 * x[i] + c.b1 * x1 + c.b2 * x2 - c.a1 * y1 - c.a2 * y2;
+      x2 = x1; x1 = x[i]; y2 = y1; y1 = v; y[i] = v;
+    }
+    return y;
+  }
+  function bandpass(x, fs, lo, hi) {
+    var hp = biquadCoefs('hp', lo, fs, 0.7071), lp = biquadCoefs('lp', Math.min(hi, fs * 0.45), fs, 0.7071);
+    return biquadRun(biquadRun(biquadRun(biquadRun(x, hp), hp), lp), lp);
+  }
+
+  /* ---------- energy envelope (RMS, hop 10 ms, window 20 ms) and smoothing ---------- */
+  function envelope(x, sr, hopSec, winSec) {
+    var hop = Math.round(hopSec * sr), win = Math.round(winSec * sr);
+    var n = Math.max(0, Math.floor((x.length - win) / hop) + 1);
+    var cs = new Float64Array(x.length + 1);
+    for (var i = 0; i < x.length; i++) cs[i + 1] = cs[i] + x[i] * x[i];
+    var e = new Float32Array(n);
+    for (var j = 0; j < n; j++) e[j] = Math.sqrt((cs[j * hop + win] - cs[j * hop]) / win);
+    return e;
+  }
+  function gaussSmooth(a, sigma) {
+    if (!(sigma > 0)) return a;
+    var R = Math.ceil(sigma * 3), k = new Float64Array(2 * R + 1), s = 0, i, j;
+    for (i = -R; i <= R; i++) { k[i + R] = Math.exp(-0.5 * i * i / (sigma * sigma)); s += k[i + R]; }
+    var out = new Float32Array(a.length);
+    for (i = 0; i < a.length; i++) {
+      var acc = 0, ws = 0;
+      for (j = -R; j <= R; j++) {
+        var q = i + j;
+        if (q < 0 || q >= a.length) continue;
+        acc += a[q] * k[j + R]; ws += k[j + R];
+      }
+      out[i] = acc / ws;
+    }
+    return out;
+  }
+  function toDb(a) {
+    var o = new Float32Array(a.length);
+    for (var i = 0; i < a.length; i++) o[i] = 20 * Math.log10(a[i] + 1e-9);
+    return o;
+  }
+
+  /* ---------- YIN pitch tracker ---------- */
+  function yinFrame(x, s, W, tauMin, tauMax, thr, buf) {
+    var d = buf.d, c = buf.c, tau, j;
+    d[0] = 0;
+    for (tau = 1; tau <= tauMax; tau++) {
+      var sum = 0;
+      for (j = 0; j < W; j++) { var df = x[s + j] - x[s + j + tau]; sum += df * df; }
+      d[tau] = sum;
+    }
+    c[0] = 1;
+    var run = 0;
+    for (tau = 1; tau <= tauMax; tau++) { run += d[tau]; c[tau] = run > 0 ? d[tau] * tau / run : 1; }
+    var best = -1;
+    for (tau = tauMin; tau <= tauMax; tau++) {
+      if (c[tau] < thr) {
+        while (tau + 1 <= tauMax && c[tau + 1] < c[tau]) tau++;
+        best = tau; break;
+      }
+    }
+    if (best < 0) { // no dip under the threshold: global minimum, flagged by its (high) aperiodicity
+      var mn = 1e9;
+      for (tau = tauMin; tau <= tauMax; tau++) if (c[tau] < mn) { mn = c[tau]; best = tau; }
+    }
+    var ap = c[best], tb = best;
+    if (best > 1 && best < tauMax) {
+      var s0 = d[best - 1], s1 = d[best], s2 = d[best + 1], den = 2 * (2 * s1 - s2 - s0);
+      if (den !== 0) tb = best + (s2 - s0) / den;
+    }
+    return { tau: tb, ap: ap };
+  }
+  function medianFilterVoiced(f0, size) {
+    var n = f0.length, out = new Float32Array(n), h = (size - 1) >> 1;
+    for (var i = 0; i < n; i++) {
+      if (!f0[i]) continue;
+      var w = [];
+      for (var k = -h; k <= h; k++) { var q = i + k; if (q >= 0 && q < n && f0[q]) w.push(f0[q]); }
+      out[i] = median(w);
+    }
+    return out;
+  }
+  function dropShortRuns(f0, minLen) {
+    var n = f0.length, i = 0;
+    while (i < n) {
+      if (!f0[i]) { i++; continue; }
+      var j = i;
+      while (j < n && f0[j]) j++;
+      if (j - i < minLen) for (var k = i; k < j; k++) f0[k] = 0;
+      i = j;
+    }
+    return f0;
+  }
+  /* Two passes: a wide pass finds this speaker's median f0, the second pass searches only
+     around it (about 0.55x to 1.8x). That is the "range adapts to the take" step. */
+  function pitchTrack(x, sr, opts) {
+    opts = opts || {};
+    var hop = Math.round((opts.hop || 0.01) * sr), W = Math.round((opts.win || 0.032) * sr);
+    var fminW = opts.fmin || 65, fmaxW = opts.fmax || 450;
+    var maxRms = 0, nFr;
+    var pad = Math.ceil(sr / 55) + W + 4;
+    var xp = new Float32Array(x.length + pad); xp.set(x);
+    nFr = Math.max(0, Math.floor((x.length - W) / hop) + 1);
+    var rmsArr = new Float32Array(nFr), i;
+    for (i = 0; i < nFr; i++) { rmsArr[i] = rmsOf(xp, i * hop, i * hop + W); if (rmsArr[i] > maxRms) maxRms = rmsArr[i]; }
+    var gate = Math.max(1e-4, maxRms * 0.04);
+
+    function pass(fmin, fmax, thr, apMax, step) {
+      step = step || 1;
+      var tauMin = Math.max(2, Math.floor(sr / fmax)), tauMax = Math.ceil(sr / fmin);
+      var buf = { d: new Float64Array(tauMax + 2), c: new Float64Array(tauMax + 2) };
+      var f0 = new Float32Array(nFr), ap = new Float32Array(nFr);
+      for (var f = 0; f < nFr; f++) {
+        ap[f] = 1;
+        if (f % step || rmsArr[f] < gate) continue;
+        var r = yinFrame(xp, f * hop, W, tauMin, tauMax, thr, buf);
+        ap[f] = r.ap;
+        if (r.ap < apMax) f0[f] = sr / r.tau;
+      }
+      return { f0: f0, ap: ap };
+    }
+    var p1 = pass(fminW, fmaxW, 0.15, 0.12, 3);   // only used for the median, so every third frame is enough
+    var conf = [];
+    for (i = 0; i < nFr; i++) if (p1.f0[i]) conf.push(p1.f0[i]);
+    var m1 = conf.length >= 5 ? median(conf) : NaN;
+    var res, range;
+    if (isNaN(m1)) {
+      res = pass(fminW, fmaxW, 0.2, 0.25); range = [fminW, fmaxW];
+    } else {
+      range = [Math.max(55, m1 * 0.55), Math.min(500, m1 * 1.8)];
+      res = pass(range[0], range[1], 0.2, 0.25);
+    }
+    var f0c = dropShortRuns(medianFilterVoiced(res.f0, 5), 4);
+    return { f0: f0c, ap: res.ap, rms: rmsArr, hop: hop / sr, win: W / sr, range: range, median: isNaN(m1) ? median(Array.prototype.filter.call(f0c, Boolean)) : m1 };
+  }
+  function pitchTime(i, pt) { return i * pt.hop + pt.win / 2; }
+  function toSemitones(f0, ref) {
+    var o = new Float32Array(f0.length);
+    for (var i = 0; i < f0.length; i++) o[i] = f0[i] ? 12 * Math.log2(f0[i] / ref) : NaN;
+    return o;
+  }
+  function voicedMedian(f0) {
+    var v = [];
+    for (var i = 0; i < f0.length; i++) if (f0[i]) v.push(f0[i]);
+    return v.length ? median(v) : NaN;
+  }
+
+  /* ---------- melody: ending of the sentence ---------- */
+  function classifyEnding(f0, hopSec, opts) {
+    opts = opts || {};
+    var win = opts.windowSec || 0.3, thr = opts.thresholdSt || 1.5;
+    var idx = [], i;
+    for (i = 0; i < f0.length; i++) if (f0[i]) idx.push(i);
+    if (idx.length < 12) return { dir: 'unknown', deltaSt: 0 };
+    var med = voicedMedian(f0);
+    var nWin = Math.max(8, Math.round(win / hopSec));
+    var sel = idx.slice(Math.max(0, idx.length - nWin));
+    var xs = [], ys = [];
+    for (i = 0; i < sel.length; i++) { xs.push(sel[i] * hopSec); ys.push(12 * Math.log2(f0[sel[i]] / med)); }
+    var mx = mean(xs), my = mean(ys), sxx = 0, sxy = 0;
+    for (i = 0; i < xs.length; i++) { sxx += (xs[i] - mx) * (xs[i] - mx); sxy += (xs[i] - mx) * (ys[i] - my); }
+    var slope = sxx > 0 ? sxy / sxx : 0;
+    var span = xs[xs.length - 1] - xs[0];
+    var delta = slope * span;
+    return { dir: delta >= thr ? 'rising' : (delta <= -thr ? 'falling' : 'flat'), deltaSt: delta, slope: slope, from: sel[0], to: sel[sel.length - 1] };
+  }
+  /* Schematic expected shapes (semitones about the speaker's own median) over normalised
+     time 0..1. These are teaching sketches, not measured French norms. */
+  function expectedBand(type, t) {
+    var c, half = 2.4;
+    if (type === 'question') c = t < 0.65 ? 0 : 4.2 * (t - 0.65) / 0.35;
+    else if (type === 'whq') c = 1.5 - 3.5 * t;
+    else if (type === 'continue') c = t < 0.7 ? 0.5 - 1.0 * t : -0.2 + 3 * (t - 0.7);
+    else c = 2.5 - 5.5 * t - (t > 0.75 ? 2.0 * (t - 0.75) / 0.25 : 0);
+    return [c - half, c + half];
+  }
+
+  /* ---------- syllable nuclei ---------- */
+  function syllableNuclei(x, sr, opts) {
+    opts = opts || {};
+    var hopSec = 0.01, winSec = 0.02;
+    var minSpacing = opts.minSpacing || 0.11, dipDb = opts.dipDb == null ? 2 : opts.dipDb, rangeDb = opts.rangeDb || 28;
+    var bp = bandpass(x, sr, 300, 3000);
+    var env = gaussSmooth(envelope(bp, sr, hopSec, winSec), 2);
+    var db = toDb(env), n = db.length, i, j;
+    if (n < 5) return { n: 0, times: [], widths: [], dB: [], env: db, hop: hopSec, region: [0, 0], speechSec: 0 };
+    var maxDb = -1e9;
+    for (i = 0; i < n; i++) if (db[i] > maxDb) maxDb = db[i];
+    var floorDb = percentile(db, 0.1);
+    var minDb = Math.max(maxDb - rangeDb, floorDb + 8);
+    var rs = -1, re = -1;
+    for (i = 0; i < n; i++) if (db[i] >= maxDb - 25) { if (rs < 0) rs = i; re = i; }
+    // candidate local maxima
+    var cand = [];
+    for (i = 1; i < n - 1; i++) if (db[i] > db[i - 1] && db[i] >= db[i + 1] && db[i] >= minDb) cand.push(i);
+    // optional voicing mask: keep a peak only if a voiced pitch frame lies within +-40 ms
+    if (opts.voiced) {
+      var vm = opts.voiced, vhop = opts.voicedHop || hopSec, off = opts.voicedOffset || 0;
+      var tol = Math.round(0.04 / vhop);
+      cand = cand.filter(function (p) {
+        var c = Math.round((p * hopSec + winSec / 2 - off) / vhop);
+        for (var k = c - tol; k <= c + tol; k++) if (k >= 0 && k < vm.length && vm[k]) return true;
+        return false;
+      });
+    }
+    // greedy minimum spacing, tallest first
+    var order = cand.slice().sort(function (a, b) { return db[b] - db[a]; });
+    var sp = Math.round(minSpacing / hopSec), kept = [];
+    order.forEach(function (p) {
+      for (var q = 0; q < kept.length; q++) if (Math.abs(kept[q] - p) < sp) return;
+      kept.push(p);
+    });
+    kept.sort(function (a, b) { return a - b; });
+    // dip criterion: neighbours must be separated by a valley at least dipDb deep
+    var changed = true;
+    while (changed && kept.length > 1) {
+      changed = false;
+      var worst = -1, worstProm = 1e9;
+      for (i = 0; i < kept.length - 1; i++) {
+        var a = kept[i], b = kept[i + 1], mn = 1e9;
+        for (j = a; j <= b; j++) if (db[j] < mn) mn = db[j];
+        var prom = Math.min(db[a], db[b]) - mn;
+        if (prom < worstProm) { worstProm = prom; worst = i; }
+      }
+      if (worstProm < dipDb) {
+        kept.splice(db[kept[worst]] < db[kept[worst + 1]] ? worst : worst + 1, 1);
+        changed = true;
+      }
+    }
+    // widths at -6 dB, limited by the valleys
+    var times = [], widths = [], dbs = [];
+    for (i = 0; i < kept.length; i++) {
+      var p = kept[i], lo = i ? kept[i - 1] : 0, hi = i < kept.length - 1 ? kept[i + 1] : n - 1;
+      var thr = db[p] - 6, l = p, r = p;
+      while (l > lo && db[l - 1] >= thr) l--;
+      while (r < hi && db[r + 1] >= thr) r++;
+      times.push(p * hopSec + winSec / 2);
+      widths.push((r - l + 1) * hopSec);
+      dbs.push(db[p] - maxDb);
+    }
+    var speechSec = rs >= 0 ? (re - rs + 1) * hopSec + winSec : 0;
+    return { n: kept.length, times: times, widths: widths, dB: dbs, env: db, hop: hopSec, region: [rs * hopSec, re * hopSec + winSec], speechSec: speechSec, maxDb: maxDb };
+  }
+  /* rate, evenness, last-syllable lengthening from the nuclei */
+  function rhythmStats(sy) {
+    var n = sy.n, out = { n: n, rate: null, cv: null, lastLonger: null, lastRatio: null, intervals: [] };
+    if (n >= 2 && sy.speechSec > 0) out.rate = n / sy.speechSec;
+    if (n >= 4) {
+      var iv = [], i;
+      for (i = 1; i < n; i++) iv.push(sy.times[i] - sy.times[i - 1]);
+      var med = median(iv), kept = iv.filter(function (v) { return v < 2.5 * med; });
+      out.intervals = iv;
+      if (kept.length >= 3) out.cv = std(kept) / mean(kept);
+    }
+    if (n >= 4) {
+      var others = sy.widths.slice(0, n - 1), m = median(others);
+      out.lastRatio = sy.widths[n - 1] / m;
+      out.lastLonger = out.lastRatio >= 1.15;
+    }
+    return out;
+  }
+
+  /* ---------- LPC formants ---------- */
+  function lpc(frame, order) {
+    var n = frame.length, r = new Float64Array(order + 1), i, k;
+    for (k = 0; k <= order; k++) { var s = 0; for (i = 0; i + k < n; i++) s += frame[i] * frame[i + k]; r[k] = s; }
+    if (r[0] <= 0) return null;
+    r[0] *= 1.0001;
+    var a = new Float64Array(order + 1); a[0] = 1;
+    var e = r[0];
+    for (i = 1; i <= order; i++) {
+      var acc = r[i];
+      for (k = 1; k < i; k++) acc += a[k] * r[i - k];
+      var kk = -acc / e, tmp = new Float64Array(a);
+      for (k = 1; k < i; k++) a[k] = tmp[k] + kk * tmp[i - k];
+      a[i] = kk;
+      e *= (1 - kk * kk);
+      if (e <= 0) return null;
+    }
+    return a;
+  }
+  // roots of z^p + a1 z^(p-1) + ... + ap by Durand-Kerner
+  function polyRoots(a) {
+    var p = a.length - 1, re = new Float64Array(p), im = new Float64Array(p), it, i, j;
+    for (i = 0; i < p; i++) { var ang = TWO_PI * i / p + 0.4; re[i] = 0.9 * Math.cos(ang); im[i] = 0.9 * Math.sin(ang); }
+    for (it = 0; it < 200; it++) {
+      var maxd = 0;
+      for (i = 0; i < p; i++) {
+        // evaluate polynomial at root i (Horner)
+        var pr = 1, pi = 0;
+        for (j = 1; j <= p; j++) {
+          var nr = pr * re[i] - pi * im[i] + a[j], ni = pr * im[i] + pi * re[i];
+          pr = nr; pi = ni;
+        }
+        // denominator: product of (z_i - z_j)
+        var dr = 1, di = 0;
+        for (j = 0; j < p; j++) {
+          if (j === i) continue;
+          var xr = re[i] - re[j], xi = im[i] - im[j];
+          var tr = dr * xr - di * xi; di = dr * xi + di * xr; dr = tr;
+        }
+        var den = dr * dr + di * di;
+        if (den < 1e-300) continue;
+        var qr = (pr * dr + pi * di) / den, qi = (pi * dr - pr * di) / den;
+        re[i] -= qr; im[i] -= qi;
+        var dd = Math.abs(qr) + Math.abs(qi);
+        if (dd > maxd) maxd = dd;
+      }
+      if (maxd < 1e-10) break;
+    }
+    return { re: re, im: im };
+  }
+  function lpcFormantsFrame(frame, sr, order) {
+    var a = lpc(frame, order);
+    if (!a) return null;
+    var rt = polyRoots(a), out = [], i;
+    for (i = 0; i < rt.re.length; i++) {
+      if (rt.im[i] <= 0) continue;
+      var mag = Math.hypot(rt.re[i], rt.im[i]);
+      var f = Math.atan2(rt.im[i], rt.re[i]) * sr / TWO_PI;
+      var bw = -Math.log(mag) * sr / Math.PI;
+      if (f > 150 && f < sr / 2 - 150 && bw > 0 && bw < 450) out.push({ f: f, bw: bw });
+    }
+    out.sort(function (x, y) { return x.f - y.f; });
+    if (out.length < 2) return null;
+    return { f1: out[0].f, f2: out[1].f, f3: out[2] ? out[2].f : NaN, all: out };
+  }
+  /* Median F1/F2 over the steady part [t0,t1] (seconds) of a 16 kHz signal. */
+  function formants(x, sr, t0, t1, opts) {
+    opts = opts || {};
+    var order = opts.order || 12, tsr = opts.sr || 11025;
+    var seg = x.subarray(Math.max(0, Math.floor(t0 * sr)), Math.min(x.length, Math.ceil(t1 * sr)));
+    var y = resample(seg, sr, tsr);
+    var pre = new Float32Array(y.length);
+    for (var i = 1; i < y.length; i++) pre[i] = y[i] - 0.97 * y[i - 1];
+    var W = Math.round(0.03 * tsr), H = Math.round(0.01 * tsr), ham = new Float32Array(W);
+    for (i = 0; i < W; i++) ham[i] = 0.54 - 0.46 * Math.cos(TWO_PI * i / (W - 1));
+    var fr = [], f = new Float32Array(W);
+    for (var s = 0; s + W <= pre.length; s += H) {
+      for (i = 0; i < W; i++) f[i] = pre[s + i] * ham[i];
+      var r = lpcFormantsFrame(f, tsr, order);
+      if (r) fr.push({ f1: r.f1, f2: r.f2, f3: r.f3 });
+    }
+    if (fr.length < 3) return null;
+    var m1 = median(fr.map(function (q) { return q.f1; })), m2 = median(fr.map(function (q) { return q.f2; }));
+    var good = fr.filter(function (q) { return Math.abs(q.f1 / m1 - 1) < 0.25 && Math.abs(q.f2 / m2 - 1) < 0.25; });
+    if (good.length >= 3) { m1 = median(good.map(function (q) { return q.f1; })); m2 = median(good.map(function (q) { return q.f2; })); }
+    var f3s = good.map(function (q) { return q.f3; }).filter(function (v) { return !isNaN(v); });
+    return { f1: m1, f2: m2, f3: f3s.length ? median(f3s) : NaN, frames: good.length ? good : fr, nAll: fr.length };
+  }
+  /* longest voiced run of the pitch track, trimmed to its steady centre */
+  function steadyRun(f0, hopSec, minSec) {
+    var best = null, i = 0, n = f0.length;
+    while (i < n) {
+      if (!f0[i]) { i++; continue; }
+      var j = i;
+      while (j < n && f0[j]) j++;
+      if (!best || j - i > best.len) best = { a: i, b: j, len: j - i };
+      i = j;
+    }
+    if (!best || best.len * hopSec < (minSec || 0.3)) return null;
+    var trim = Math.floor(best.len * 0.2);
+    return { a: (best.a + trim) * hopSec, b: (best.b - trim) * hopSec + 0.03, fullSec: best.len * hopSec };
+  }
+
+  /* ---------- live voice activity (auto-stop) ---------- */
+  function createVad(cfg) {
+    cfg = cfg || {};
+    var silenceStop = cfg.silenceStop || 1.2, maxSec = cfg.maxSec || 12, noSpeechSec = cfg.noSpeechSec || 8;
+    var minSpeech = cfg.minSpeech || 0.15, holdSec = cfg.holdSec || 0;
+    var t = 0, floor = null, peak = 0, speechTotal = 0, lastVoice = -1, started = false, run = 0, thr = 0;
+    return {
+      push: function (rms, dt) {
+        t += dt;
+        /* noise floor = running minimum that drifts up about 8 % per second, so a person who
+           starts talking at once (floor = speech level) still gets a usable threshold: the
+           threshold can never exceed 30 % of the loudest level heard so far. */
+        if (floor === null) floor = rms;
+        floor = Math.min(rms, floor * Math.pow(1.003, dt / 0.04));
+        peak = Math.max(peak * Math.pow(0.9997, dt / 0.04), rms);
+        thr = Math.max(cfg.minThr || 0.004, peak * 0.1, Math.min(floor * 3, peak * 0.3));
+        var speech = rms > thr;
+        if (speech) { run += dt; speechTotal += dt; lastVoice = t; if (run >= 0.06) started = true; } else run = 0;
+        var stop = null;
+        if (t >= maxSec) stop = 'max';
+        else if (started && speechTotal >= minSpeech && t - lastVoice >= silenceStop) stop = 'silence';
+        else if (holdSec && speechTotal >= holdSec) stop = 'hold';
+        else if (!started && t >= noSpeechSec) stop = 'nospeech';
+        return { speech: speech, started: started, stop: stop, t: t, thr: thr };
+      }
+    };
+  }
+
+  /* ---------- WAV encode (16-bit mono) ---------- */
+  function encodeWav(x, sr) {
+    var n = x.length, buf = new ArrayBuffer(44 + n * 2), v = new DataView(buf), i;
+    function str(o, s) { for (var k = 0; k < s.length; k++) v.setUint8(o + k, s.charCodeAt(k)); }
+    str(0, 'RIFF'); v.setUint32(4, 36 + n * 2, true); str(8, 'WAVE'); str(12, 'fmt ');
+    v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, sr, true); v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    str(36, 'data'); v.setUint32(40, n * 2, true);
+    for (i = 0; i < n; i++) { var s = Math.max(-1, Math.min(1, x[i])); v.setInt16(44 + i * 2, s < 0 ? s * 0x8000 : s * 0x7fff, true); }
+    return buf;
+  }
+  function decodeWav(buf) { // test helper: 16-bit PCM mono/stereo (first channel)
+    var v = new DataView(buf), ch = v.getUint16(22, true), sr = v.getUint32(24, true), p = 12, dataOff = 0, dataLen = 0;
+    while (p < buf.byteLength - 8) {
+      var id = String.fromCharCode(v.getUint8(p), v.getUint8(p + 1), v.getUint8(p + 2), v.getUint8(p + 3)), len = v.getUint32(p + 4, true);
+      if (id === 'data') { dataOff = p + 8; dataLen = len; break; }
+      p += 8 + len + (len & 1);
+    }
+    var n = Math.floor(dataLen / 2 / ch), y = new Float32Array(n);
+    for (var i = 0; i < n; i++) y[i] = v.getInt16(dataOff + i * 2 * ch, true) / 32768;
+    return { x: y, sr: sr };
+  }
+
+  /* ---------- one call for a sentence take ---------- */
+  function analyzeTake(pcm, srIn) {
+    var sr = 16000, x = resample(pcm, srIn, sr);
+    // trim DC
+    var m = mean(x); if (Math.abs(m) > 1e-5) for (var i = 0; i < x.length; i++) x[i] -= m;
+    var pt = pitchTrack(resample(x, sr, 8000), 8000);   // pitch needs no more than 8 kHz and runs 4 times faster there
+    var voiced = new Uint8Array(pt.f0.length);
+    for (i = 0; i < voiced.length; i++) voiced[i] = pt.f0[i] ? 1 : 0;
+    var sy = syllableNuclei(x, sr, { voiced: voiced, voicedHop: pt.hop, voicedOffset: pt.win / 2 });
+    var rh = rhythmStats(sy);
+    var end = classifyEnding(pt.f0, pt.hop);
+    var med = voicedMedian(pt.f0);
+    var nV = 0; for (i = 0; i < pt.f0.length; i++) if (pt.f0[i]) nV++;
+    return { sr: sr, x: x, pitch: pt, syll: sy, rhythm: rh, ending: end, medianF0: med, voicedFrames: nV, durSec: x.length / sr };
+  }
+
+  return {
+    median: median, percentile: percentile, mean: mean, std: std, rmsOf: rmsOf, concatChunks: concatChunks,
+    resample: resample, biquadCoefs: biquadCoefs, biquadRun: biquadRun, bandpass: bandpass,
+    envelope: envelope, gaussSmooth: gaussSmooth, toDb: toDb,
+    pitchTrack: pitchTrack, pitchTime: pitchTime, toSemitones: toSemitones, voicedMedian: voicedMedian,
+    classifyEnding: classifyEnding, expectedBand: expectedBand,
+    syllableNuclei: syllableNuclei, rhythmStats: rhythmStats,
+    lpc: lpc, polyRoots: polyRoots, lpcFormantsFrame: lpcFormantsFrame, formants: formants, steadyRun: steadyRun,
+    createVad: createVad, encodeWav: encodeWav, decodeWav: decodeWav, analyzeTake: analyzeTake
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = DSP;
+
+</script>
+<script id="text-section">
+/* ==========================================================================================
+   TEXT SECTION: pure functions and data (no DOM). Runs in the browser and in Node tests.
+   1. IPA engine, copied unchanged from the Français Quotidien app (frPron and its tables),
+      followed by a small "Dis-la overrides" layer for words the app's rules misread.
+   2. Word normalising and alignment, syllable counts, sound patterns, the rule-based coach.
+   3. Vowel reference areas, Sons data, the sentence bank.
+   No LLM, no network. Every tip below is a fixed sentence written by hand.
+   ========================================================================================== */
+var TXT = (function () {
+  'use strict';
+
+  /* ---------------------------------------------------------------------------------------
+     1a. IPA engine from Français Quotidien (verbatim)
+     --------------------------------------------------------------------------------------- */
+var FR_ILLE_IL_EXC=["ville","mille","tranquille","village","bacille","oscille","distille","instille","pupille","codicille"];
+var FR_ER_KEEP_R=["mer","fer","cher","chère","hier","hiver","enfer","fier","fière","amer","amère","cancer","ver","cuiller","cuillère","super","master","fair","car","bar"];
+var FR_WORD_EXC={
+  "je":{ipa:"ʒə",phon:"zh-uh"},"me":{ipa:"mə",phon:"m-uh"},"te":{ipa:"tə",phon:"t-uh"},
+  "se":{ipa:"sə",phon:"s-uh"},"le":{ipa:"lə",phon:"l-uh"},"de":{ipa:"də",phon:"d-uh"},
+  "ne":{ipa:"nə",phon:"n-uh"},"ce":{ipa:"sə",phon:"s-uh"},"que":{ipa:"kə",phon:"k-uh"},
+  "les":{ipa:"le",phon:"lay"},"des":{ipa:"de",phon:"day"},"ces":{ipa:"se",phon:"say"},
+  "mes":{ipa:"me",phon:"may"},"tes":{ipa:"te",phon:"tay"},"ses":{ipa:"se",phon:"say"},
+  "et":{ipa:"e",phon:"ay"},"est":{ipa:"ɛ",phon:"eh"},"es":{ipa:"ɛ",phon:"eh"}
+};
+var FR_PHRASE_EXC={
+  "c'est":{ipa:"sɛ",phon:"say"},"n'est":{ipa:"nɛ",phon:"neh"},
+  "j'ai":{ipa:"ʒe",phon:"zhay"},"qu'est-ce":{ipa:"kɛs",phon:"kess"},
+  "qu'est":{ipa:"kɛ",phon:"keh"}
+};
+/* Fan, 8 Oct 2026: hand-checked IPA for the fixed word lists in the app (the 11 listening pairs, days, months,
+   seasons, number words) plus a few very common words the spelling rules misread. Looked up BEFORE the rules,
+   one lowercase token at a time. "qv" and "vt" are stand-ins numIpa() uses for quatre-vingt and the
+   vingt that keeps its t (vingt-deux). */
+var FR_CURATED={
+  "poisson":{ipa:"pwasɔ̃",phon:"pwah-sohn"},"poison":{ipa:"pwazɔ̃",phon:"pwah-zohn"},
+  "dessert":{ipa:"desɛʁ",phon:"day-sair"},"désert":{ipa:"dezɛʁ",phon:"day-zair"},
+  "rue":{ipa:"ʁy",phon:"r-ew"},"roue":{ipa:"ʁu",phon:"r-oo"},
+  "tu":{ipa:"ty",phon:"t-ew"},"tout":{ipa:"tu",phon:"t-oo"},
+  "dessus":{ipa:"dəsy",phon:"duh-sew"},"dessous":{ipa:"dəsu",phon:"duh-soo"},
+  "chat":{ipa:"ʃa",phon:"sh-ah"},"chaud":{ipa:"ʃo",phon:"sh-oh"},
+  "pain":{ipa:"pɛ̃",phon:"p-an"},"peine":{ipa:"pɛn",phon:"p-ehn"},
+  "bon":{ipa:"bɔ̃",phon:"b-ohn"},"bonne":{ipa:"bɔn",phon:"b-awn"},
+  "vent":{ipa:"vɑ̃",phon:"v-ahn"},"vin":{ipa:"vɛ̃",phon:"v-an"},
+  "blanc":{ipa:"blɑ̃",phon:"bl-ahn"},"blond":{ipa:"blɔ̃",phon:"bl-ohn"},
+  "sans":{ipa:"sɑ̃",phon:"s-ahn"},"son":{ipa:"sɔ̃",phon:"s-ohn"},
+  "lundi":{ipa:"lœ̃di",phon:"l-uhn-dee"},"mardi":{ipa:"maʁdi",phon:"mar-dee"},
+  "mercredi":{ipa:"mɛʁkʁədi",phon:"mair-kruh-dee"},"jeudi":{ipa:"ʒødi",phon:"zhuh-dee"},
+  "vendredi":{ipa:"vɑ̃dʁədi",phon:"vahn-druh-dee"},"samedi":{ipa:"samdi",phon:"sam-dee"},
+  "dimanche":{ipa:"dimɑ̃ʃ",phon:"dee-mahnsh"},
+  "janvier":{ipa:"ʒɑ̃vje",phon:"zhahn-vyay"},"février":{ipa:"fevʁije",phon:"fay-vree-yay"},
+  "mars":{ipa:"maʁs",phon:"marss"},"avril":{ipa:"avʁil",phon:"ah-vreel"},"mai":{ipa:"mɛ",phon:"meh"},
+  "juin":{ipa:"ʒɥɛ̃",phon:"zhwan"},"juillet":{ipa:"ʒɥijɛ",phon:"zhwee-yeh"},"août":{ipa:"ut",phon:"oot"},
+  "septembre":{ipa:"sɛptɑ̃bʁ",phon:"sep-tahnbr"},"octobre":{ipa:"ɔktɔbʁ",phon:"ok-tobr"},
+  "novembre":{ipa:"nɔvɑ̃bʁ",phon:"no-vahnbr"},"décembre":{ipa:"desɑ̃bʁ",phon:"day-sahnbr"},
+  "hiver":{ipa:"ivɛʁ",phon:"ee-vair"},"printemps":{ipa:"pʁɛ̃tɑ̃",phon:"pran-tahn"},
+  "été":{ipa:"ete",phon:"ay-tay"},"automne":{ipa:"otɔn",phon:"oh-tonn"},
+  "zéro":{ipa:"zeʁo",phon:"zay-roh"},"un":{ipa:"œ̃",phon:"uhn"},"une":{ipa:"yn",phon:"ewn"},
+  "deux":{ipa:"dø",phon:"duh"},"trois":{ipa:"tʁwa",phon:"trwah"},"quatre":{ipa:"katʁ",phon:"katr"},
+  "cinq":{ipa:"sɛ̃k",phon:"sank"},"six":{ipa:"sis",phon:"seess"},"sept":{ipa:"sɛt",phon:"set"},
+  "huit":{ipa:"ɥit",phon:"weet"},"neuf":{ipa:"nœf",phon:"nuhf"},"dix":{ipa:"dis",phon:"deess"},
+  "onze":{ipa:"ɔ̃z",phon:"ohnz"},"douze":{ipa:"duz",phon:"dooz"},"treize":{ipa:"tʁɛz",phon:"trez"},
+  "quatorze":{ipa:"katɔʁz",phon:"ka-torz"},"quinze":{ipa:"kɛ̃z",phon:"kanz"},"seize":{ipa:"sɛz",phon:"sez"},
+  "vingt":{ipa:"vɛ̃",phon:"van"},"vingts":{ipa:"vɛ̃",phon:"van"},"trente":{ipa:"tʁɑ̃t",phon:"trahnt"},
+  "quarante":{ipa:"kaʁɑ̃t",phon:"ka-rahnt"},"cinquante":{ipa:"sɛ̃kɑ̃t",phon:"san-kahnt"},
+  "soixante":{ipa:"swasɑ̃t",phon:"swa-sahnt"},"cent":{ipa:"sɑ̃",phon:"sahn"},"cents":{ipa:"sɑ̃",phon:"sahn"},
+  "mille":{ipa:"mil",phon:"meel"},
+  "fromage":{ipa:"fʁɔmaʒ",phon:"fr-aw-mahzh"},"plaît":{ipa:"plɛ",phon:"pleh"},
+  "où":{ipa:"u",phon:"oo"},
+  "qv":{ipa:"katʁəvɛ̃",phon:"katr-van"},"vt":{ipa:"vɛ̃t",phon:"vant"}
+};
+/* Fan, 9 Oct 2026 (« play each sentence » in the five-tenses drill): the IPA line now sits under every sentence of that drill, so every
+   word the drill uses was checked one by one and the ones the rules got wrong are fixed here by hand: silent -ent / -aient endings
+   (ils attendent, disaient), -geais / -gé (mangeais, mangé), -aill- (travaille), the future « -rai » (e, not ɛ), leur / heures, eu, film. */
+(function(){
+  var X={
+   "film":["film","feelm"],"mangé":["mɑ̃ʒe","mahn-zhay"],"mangée":["mɑ̃ʒe","mahn-zhay"],"mangeais":["mɑ̃ʒɛ","mahn-zheh"],"mangeait":["mɑ̃ʒɛ","mahn-zheh"],"mangeons":["mɑ̃ʒɔ̃","mahn-zhohn"],
+   "attendent":["atɑ̃d","ah-tahnd"],"attendaient":["atɑ̃dɛ","ah-tahn-deh"],"disent":["diz","deez"],"disaient":["dizɛ","dee-zeh"],
+   "habitent":["abit","ah-beet"],"habitaient":["abitɛ","ah-bee-teh"],"téléphonent":["telefɔn","tay-lay-fon"],"téléphonaient":["telefɔnɛ","tay-lay-fo-neh"],
+   "habiller":["abije","ah-bee-yay"],"m'habiller":["mabije","mah-bee-yay"],"m'habillerai":["mabijəʁe","mah-bee-yuh-ray"],
+   "travail":["tʁavaj","trah-vy"],"travaille":["tʁavaj","trah-vy"],"travaillais":["tʁavajɛ","trah-vy-eh"],"travailler":["tʁavaje","trah-vy-ay"],
+   "travaillerai":["tʁavajəʁe","trah-vy-uh-ray"],"travaillé":["tʁavaje","trah-vy-ay"],
+   "heures":["œʁ","uhr"],"leur":["lœʁ","luhr"],"eu":["y","ew"],"faisais":["fəzɛ","fuh-zeh"],
+   "irai":["iʁe","ee-ray"],"j'irai":["ʒiʁe","zhee-ray"],"pourrai":["puʁe","poo-ray"],"verrai":["vɛʁe","veh-ray"],"mettrai":["mɛtʁe","meh-tray"],
+   "prendrai":["pʁɑ̃dʁe","prahn-dray"],"répondrai":["ʁepɔ̃dʁe","ray-pohn-dray"],"parlerai":["paʁləʁe","par-luh-ray"],"mangerai":["mɑ̃ʒəʁe","mahn-zhuh-ray"],
+   "habillerai":["abijəʁe","ah-bee-yuh-ray"],"lèverai":["lɛvəʁe","lehv-uh-ray"],"photographierai":["fotogʁafjəʁe","fo-to-gra-fyuh-ray"],
+   "hong":["ɔ̃g","ohng"],"kong":["kɔ̃g","kohng"],"l'ai":["le","luh-ay"],"n'ai":["ne","nay"],"s'est":["sɛ","seh"]
+  };
+  Object.keys(X).forEach(function(w){FR_CURATED[w]={ipa:X[w][0],phon:X[w][1]};});
+})();
+function frIsVowelLetter(c){return !!c&&"aàâeéèêëiîïoôuùûüyœæ".indexOf(c)>=0;}
+function frPronWord(rawWord){
+  var w=String(rawWord||"").toLowerCase();
+  if(!w)return[];
+  if(FR_WORD_EXC.hasOwnProperty(w)){var e0=FR_WORD_EXC[w];return[{ipa:e0.ipa,phon:e0.phon,vowel:true}];}
+  var core=w,strippedE=false;
+  var isErWord=/er$/.test(core)&&core.length>2&&FR_ER_KEEP_R.indexOf(core)===-1;
+  if(!isErWord){
+    if(/s$/.test(core)&&core.length>1)core=core.slice(0,-1);
+    else if(/x$/.test(core)&&core.length>1)core=core.slice(0,-1);
+  }
+  if(!isErWord){
+    if(/[^aeiouyàâéèêëîïôùûüœ]e$/.test(core)&&core.length>1){
+      var afterStrip=core.slice(0,-1);
+      if(/[aeiouyàâéèêëîïôùûüœ]/.test(afterStrip)){core=afterStrip;strippedE=true;}
+    }
+  }
+  /* Fan, 8 Oct 2026: a c after n at the end of a word is silent (blanc, banc, franc); donc is the exception. */
+  if(!isErWord&&!strippedE&&core.length>3&&/nc$/.test(core)&&core!=="donc")core=core.slice(0,-1);
+  if(!isErWord&&!strippedE){
+    var CAREFUL="cflrq",lastCh=core.slice(-1);
+    if(!frIsVowelLetter(lastCh)&&CAREFUL.indexOf(lastCh)===-1&&core.length>1)core=core.slice(0,-1);
+  }
+  var n=w.length,i=0,out=[],stopEmitAt=core.length;
+  function push(ipa,phon,vowel){out.push({ipa:ipa,phon:phon,vowel:!!vowel});}
+  function at(k){return w[i+k]||"";}
+  while(i<n){
+    if(isErWord&&i===n-2){push("e","ay",true);i=n;continue;}
+    if(i>=stopEmitAt){i++;continue;}
+    var c=at(0),c2=at(0)+at(1),c3=at(0)+at(1)+at(2),c4=c3+at(3);
+    var nextCh=at(2),isDoubled=(at(1)!==""&&at(1)===at(2));
+    if(c4==="tion"){push("sjɔ̃","syon",true);i+=4;continue;}
+    if(c4==="sion"){push("zjɔ̃","zyon",true);i+=4;continue;}
+    if(c4==="ssion"){push("sjɔ̃","syon",true);i+=5;continue;}
+    if(c3==="ien"&&!frIsVowelLetter(nextCh)){push("jɛ̃","yan",true);i+=3;continue;}
+    if((c3==="ain"||c3==="aim"||c3==="ein")&&!frIsVowelLetter(at(3))){push("ɛ̃","an",true);i+=3;continue;}
+    if((c2==="an"||c2==="am"||c2==="en"||c2==="em")&&!frIsVowelLetter(nextCh)&&!isDoubled){push("ɑ̃","ahn",true);i+=2;continue;}
+    if((c2==="in"||c2==="im"||c2==="yn"||c2==="ym")&&!frIsVowelLetter(nextCh)&&!isDoubled){push("ɛ̃","an",true);i+=2;continue;}
+    if((c2==="on"||c2==="om")&&!frIsVowelLetter(nextCh)&&!isDoubled){push("ɔ̃","ohn",true);i+=2;continue;}
+    if((c2==="un"||c2==="um")&&!frIsVowelLetter(nextCh)&&!isDoubled){push("œ̃","uhn",true);i+=2;continue;}
+    if(c3==="eau"){push("o","oh",true);i+=3;continue;}
+    if(c2==="eu"||c2==="œu"){push("ø","uh",true);i+=2;continue;}
+    if(c2==="au"){push("o","oh",true);i+=2;continue;}
+    if(c2==="ai"||c2==="ei"||c2==="aî"){push("ɛ","eh",true);i+=2;continue;}
+    if(c2==="ui"){push("ɥi","wee",true);i+=2;continue;}
+    if(c2==="oi"){push("wa","wah",true);i+=2;continue;}
+    if(c2==="oy"){push("waj","why",true);i+=2;continue;}
+    if(c2==="ou"){push("u","oo",true);i+=2;continue;}
+    if(w.slice(i,i+4)==="ille"||c3==="ill"){
+      var isExc=FR_ILLE_IL_EXC.some(function(ex){return w.indexOf(ex)>=0;});
+      var span=(w.slice(i,i+4)==="ille")?4:3;
+      if(isExc){push("il","eel",true);i+=span;continue;}
+      push("ij","ee-y",true);i+=span;continue;
+    }
+    if(c==="s"&&at(1)==="s"){push("s","s",false);i+=2;continue;}
+    if(!frIsVowelLetter(c)&&at(1)===c&&"bdfklmnprtz".indexOf(c)>=0){i+=1;continue;}
+    if(c2==="gn"){push("ɲ","ny",false);i+=2;continue;}
+    if(c2==="ch"){push("ʃ","sh",false);i+=2;continue;}
+    if(c2==="ph"){push("f","f",false);i+=2;continue;}
+    if(c2==="th"){push("t","t",false);i+=2;continue;}
+    if(c2==="qu"){push("k","k",false);i+=2;continue;}
+    if(c2==="gu"&&at(2)!==""&&"eiy".indexOf(at(2))>=0){push("g","g",false);i+=2;continue;}
+    if(c==="g"&&at(1)!==""&&"eiy".indexOf(at(1))>=0){push("ʒ","zh",false);i+=1;continue;}
+    if(c==="c"&&at(1)!==""&&"eiy".indexOf(at(1))>=0){push("s","s",false);i+=1;continue;}
+    if(c==="ç"){push("s","s",false);i+=1;continue;}
+    if(c==="c"){push("k","k",false);i+=1;continue;}
+    if(c==="g"){push("g","g",false);i+=1;continue;}
+    if(c==="j"){push("ʒ","zh",false);i+=1;continue;}
+    if(c==="r"){push("ʁ","r",false);i+=1;continue;}
+    if(c==="s"){
+      /* Intervocalic voicing (s -> z) must be judged by the literal SPELLING on either side of the
+         s, not by whether the last emitted SOUND happened to be a vowel: "danser" hits this branch
+         with the nasal vowel /ɑ̃/ (from "an") as its last sound, which used to read as "vowel before
+         s" and wrongly voiced it. The letter actually touching the s is "n" (a consonant), so it must
+         stay /s/ - matches the Grammaire "Le son du « s »" rule: only a single s with a real vowel
+         LETTER on both sides voices; danser, penser, dessert etc. are unaffected. */
+      var prevWasVowel=frIsVowelLetter(w[i-1]);
+      var nextIsVowel=frIsVowelLetter(at(1));
+      if(prevWasVowel&&nextIsVowel){push("z","z",false);i+=1;continue;}
+      push("s","s",false);i+=1;continue;
+    }
+    if(c==="é"||c2==="ée"){push("e","ay",true);i+=(c2==="ée"?2:1);continue;}
+    if("èêë".indexOf(c)>=0){push("ɛ","eh",true);i+=1;continue;}
+    if(c==="e"){
+      if(i===n-1){i+=1;continue;}
+      /* Fan, 8 Oct 2026: e before two consonants (mercredi, dessert, personne, restaurant) or before a final
+         r/l/k/c/f (avec, sel, mer) is open /ɛ/, not the schwa; a stop or f/v + l/r pair (regarder, degré) stays schwa. */
+      var e1=at(1),e2=at(2);
+      var eC1=!!e1&&!frIsVowelLetter(e1),eC2=!!e2&&!frIsVowelLetter(e2);
+      var eCluster=eC1&&eC2&&e1!==e2&&"bcdfgptv".indexOf(e1)>=0&&"lr".indexOf(e2)>=0;
+      if(eC1&&eC2&&!eCluster){push("ɛ","eh",true);i+=1;continue;}
+      if(eC1&&i===n-2&&"rlkcf".indexOf(e1)>=0){push("ɛ","eh",true);i+=1;continue;}
+      if(eC1&&i===n-2&&e1==="z"){push("e","ay",true);i+=1;continue;}
+      push("ə","uh",true);i+=1;continue;
+    }
+    if("aàâ".indexOf(c)>=0){push("a","ah",true);i+=1;continue;}
+    if("iîï".indexOf(c)>=0){
+      /* Fan, 8 Oct 2026: i before another vowel is the glide /j/ (hier, janvier, lion); a final -ie stays /i/ (vie). */
+      var i1=at(1);
+      if(c==="i"&&i>0&&i1!==""&&"aeouéèêâôù".indexOf(i1)>=0&&!(i1==="e"&&i+2===n)){push("j","y",false);i+=1;continue;}
+      push("i","ee",true);i+=1;continue;
+    }
+    if(c==="ô"){push("o","oh",true);i+=1;continue;}
+    if(c==="o"){
+      /* Fan, 8 Oct 2026: open /ɔ/ in a closed syllable (bonne, porte, école, robe, or); /o/ stays for rose, chose,
+         mot, gros, photo. */
+      var o1=at(1),o2=at(2);
+      var oC1=!!o1&&!frIsVowelLetter(o1),oC2=!!o2&&!frIsVowelLetter(o2);
+      var oCluster=oC1&&oC2&&o1!==o2&&"bcdfgptv".indexOf(o1)>=0&&"lr".indexOf(o2)>=0;
+      var oOpen=false;
+      if(oC1&&oC2&&!oCluster)oOpen=true;
+      else if(oC1&&o2==="e"&&i+3===n&&"sz".indexOf(o1)<0)oOpen=true;
+      else if(oC1&&i+2===n&&"rlfck".indexOf(o1)>=0)oOpen=true;
+      if(oOpen){push("ɔ","aw",true);}else{push("o","oh",true);}
+      i+=1;continue;
+    }
+    if("ùûü".indexOf(c)>=0||c==="u"){push("y","ew",true);i+=1;continue;}
+    if(c==="y"){push("i","ee",true);i+=1;continue;}
+    if(c==="œ"){push("ø","uh",true);i+=1;continue;}
+    var passMap={b:"b",d:"d",f:"f",k:"k",l:"l",m:"m",n:"n",p:"p",t:"t",v:"v",w:"w",x:"ks",z:"z"};
+    if(passMap[c]){push(passMap[c],passMap[c],false);i+=1;continue;}
+    i+=1;
+  }
+  return out;
+}
+function frPron(text){
+  var words=String(text||"").split(/([ \-]+)/);
+  var ipaParts=[],phonParts=[];
+  words.forEach(function(tok){
+    if(tok==="")return;
+    if(/^[ \-]+$/.test(tok)){ipaParts.push(" ");phonParts.push(" ");return;}
+    var lower=tok.toLowerCase().replace(/[’]/g,"'").replace(/[.,;:!?…«»"“”()]+/g,"");
+    if(!lower)return;
+    if(FR_PHRASE_EXC.hasOwnProperty(lower)){var pe=FR_PHRASE_EXC[lower];ipaParts.push(pe.ipa);phonParts.push(pe.phon);return;}
+    if(FR_CURATED.hasOwnProperty(lower)){var cu=FR_CURATED[lower];ipaParts.push(cu.ipa);phonParts.push(cu.phon);return;}
+    var cleaned=tok.replace(/['’]/g,"").replace(/[.,;:!?…«»"“”()]+/g,"");
+    var phones=frPronWord(cleaned);
+    if(!phones.length)return;
+    ipaParts.push(phones.map(function(p){return p.ipa;}).join(""));
+    phonParts.push(phones.map(function(p){return p.phon;}).filter(Boolean).join("-"));
+  });
+  return{
+    ipa:"/"+ipaParts.join("").replace(/\s+/g," ").trim()+"/",
+    phon:phonParts.join(" ").replace(/\s+/g," ").trim()
+  };
+}
+
+
+  /* ---------------------------------------------------------------------------------------
+     1b. Dis-la overrides: words the app's spelling rules get wrong, checked by hand against
+     the sentence bank. (Worth copying back into the app's FR_CURATED when convenient.)
+     --------------------------------------------------------------------------------------- */
+  (function () {
+    var X = {
+      "ai": "e", "lyon": "ljɔ̃", "joué": "ʒwe", "jouent": "ʒu", "longtemps": "lɔ̃tɑ̃", "conseils": "kɔ̃sɛj", "conseil": "kɔ̃sɛj",
+      "orange": "ɔʁɑ̃ʒ", "arrivent": "aʁiv", "heure": "œʁ", "beurre": "bœʁ", "sœur": "sœʁ", "cœur": "kœʁ", "peur": "pœʁ",
+      "seul": "sœl", "jeune": "ʒœn", "week": "wik", "end": "ɛnd", "violon": "vjɔlɔ̃", "restaurant": "ʁɛstɔʁɑ̃",
+      "tous": "tu", "sans": "sɑ̃", "grand": "gʁɑ̃", "petit": "pəti", "gros": "gʁo", "tête": "tɛt", "mer": "mɛʁ",
+      "thé": "te", "pomme": "pɔm", "tout": "tu", "si": "si", "la": "la", "beau": "bo", "mon": "mɔ̃", "mot": "mo",
+      "dans": "dɑ̃", "sa": "sa", "va": "va", "pas": "pa", "vais": "vɛ", "lu": "ly", "lue": "ly", "loup": "lu", "loue": "lu",
+      "rat": "ʁa", "riz": "ʁi", "lit": "li", "rire": "ʁiʁ", "lire": "liʁ", "y": "i", "peux": "pø", "veux": "vø"
+    };
+    Object.keys(X).forEach(function (w) { FR_CURATED[w] = { ipa: X[w], phon: "" }; });
+  })();
+
+  /* IPA of one token or a phrase, without slashes. */
+  function ipaPlain(text) {
+    var r = frPron(String(text || "")).ipa.replace(/^\/|\/$/g, "");
+    return r.normalize("NFD").replace(/øʁ(?![aeiouyøœɛɔɑəɥ])/g, "œʁ");
+  }
+  function ipaSlashed(text) { var p = ipaPlain(text); return p ? "/" + p + "/" : ""; }
+
+  /* ---------------------------------------------------------------------------------------
+     2a. Normalising, tokens, alignment
+     --------------------------------------------------------------------------------------- */
+  var DIGIT_WORDS = ["zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze", "treize", "quatorze", "quinze", "seize", "dix-sept", "dix-huit", "dix-neuf", "vingt"];
+  function stripAccents(s) {
+    return String(s).replace(/œ/g, "oe").replace(/æ/g, "ae").normalize("NFD").replace(/[̀-ͯ]/g, "");
+  }
+  /* "J'y" -> ["j","y"], "Peux-tu" -> ["peux","tu"], "aujourd'hui" stays whole */
+  function normSubs(raw) {
+    var s = String(raw || "").toLowerCase().replace(/[’‘`´]/g, "'");
+    s = s.replace(/aujourd'hui/g, "aujourdhui");
+    s = stripAccents(s).replace(/[^a-z0-9'\- ]/g, " ");
+    return s.split(/['\- ]+/).filter(Boolean);
+  }
+  function heardTokens(str) {
+    var toks = normSubs(str), out = [];
+    toks.forEach(function (t) {
+      if (/^\d+$/.test(t) && +t <= 20) out = out.concat(normSubs(DIGIT_WORDS[+t]));
+      else out.push(t);
+    });
+    return out;
+  }
+  function stripPunct(w) { return String(w).replace(/^[«"“(\[]+|[.,;:!?…»"”)\]]+$/g, ""); }
+
+  var ELIDE = { j: ["je"], l: ["le", "la"], m: ["me"], n: ["ne"], t: ["te"], s: ["se"], d: ["de"], c: ["ce"], qu: ["que"], jusqu: ["jusque"], lorsqu: ["lorsque"], puisqu: ["puisque"] };
+  function elisionMatch(a, b) { return (ELIDE[a] && ELIDE[a].indexOf(b) >= 0) || (ELIDE[b] && ELIDE[b].indexOf(a) >= 0); }
+  function lev(a, b) {
+    var m = a.length, n = b.length, d = [], i, j;
+    for (i = 0; i <= m; i++) { d[i] = [i]; }
+    for (j = 1; j <= n; j++) d[0][j] = j;
+    for (i = 1; i <= m; i++) for (j = 1; j <= n; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[m][n];
+  }
+  var _ipaCache = {};
+  function ipaTok(t) { return _ipaCache[t] != null ? _ipaCache[t] : (_ipaCache[t] = ipaPlain(t).replace(/ /g, "")); }
+  function subCost(t, h) {
+    if (t === h) return { c: 0, k: "ok" };
+    if (elisionMatch(t, h)) return { c: 0, k: "ok" };
+    var a = ipaTok(t), b = ipaTok(h);
+    if (a && a === b) return { c: 0, k: "ok" };            // homophones (habité / habités) are not told apart by sound
+    if (a && b && Math.max(a.length, b.length) >= 3 && lev(a, b) <= 1) return { c: 0.7, k: "near" };
+    return { c: 1, k: "sub" };
+  }
+  /* Needleman-Wunsch on words. T = target subtokens, H = heard subtokens. */
+  function alignWords(T, H) {
+    var n = T.length, m = H.length, D = [], B = [], i, j;
+    for (i = 0; i <= n; i++) { D[i] = new Array(m + 1); B[i] = new Array(m + 1); }
+    D[0][0] = 0;
+    for (i = 1; i <= n; i++) { D[i][0] = i; B[i][0] = "d"; }
+    for (j = 1; j <= m; j++) { D[0][j] = j; B[0][j] = "i"; }
+    for (i = 1; i <= n; i++) for (j = 1; j <= m; j++) {
+      var sc = subCost(T[i - 1], H[j - 1]).c, best = D[i - 1][j - 1] + sc, mv = "s";
+      if (D[i - 1][j] + 1 < best) { best = D[i - 1][j] + 1; mv = "d"; }
+      if (D[i][j - 1] + 1 < best) { best = D[i][j - 1] + 1; mv = "i"; }
+      D[i][j] = best; B[i][j] = mv;
+    }
+    var rows = [], ins = [];
+    i = n; j = m;
+    while (i > 0 || j > 0) {
+      var mv2 = (i > 0 && j > 0) ? B[i][j] : (i > 0 ? "d" : "i");
+      if (mv2 === "s") { var c = subCost(T[i - 1], H[j - 1]); rows.unshift({ t: T[i - 1], h: H[j - 1], k: c.k }); i--; j--; }
+      else if (mv2 === "d") { rows.unshift({ t: T[i - 1], h: null, k: "del" }); i--; }
+      else { ins.unshift(H[j - 1]); j--; }
+    }
+    return { cost: D[n][m], rows: rows, ins: ins };
+  }
+
+  /* display words of a target sentence */
+  function prepareTarget(text) {
+    var words = String(text || "").trim().split(/\s+/).filter(Boolean).map(function (w) {
+      var raw = stripPunct(w);
+      return { raw: raw, subs: normSubs(raw) };
+    }).filter(function (w) { return w.subs.length; });
+    var flat = [];
+    words.forEach(function (w, wi) { w.subs.forEach(function (s, si) { flat.push({ t: s, wi: wi, si: si }); }); });
+    return { words: words, flat: flat, type: sentenceType(text) };
+  }
+
+  /* hypotheses: array of strings (alternative k of every segment joined). Picks the closest to the target. */
+  function matchWords(targetText, hypotheses) {
+    var tg = prepareTarget(targetText), T = tg.flat.map(function (f) { return f.t; });
+    var best = null;
+    (hypotheses || []).forEach(function (h, idx) {
+      var H = heardTokens(h.text), al = alignWords(T, H);
+      if (!best || al.cost < best.al.cost - 1e-9) best = { al: al, hyp: h, idx: idx };
+    });
+    var res = { words: [], heardText: best ? best.hyp.text : "", confidence: best ? best.hyp.confidence : null, hypIndex: best ? best.idx : -1, extra: best ? best.al.ins : [] };
+    tg.words.forEach(function (w) { res.words.push({ raw: w.raw, subs: w.subs, ok: true, heard: [], missing: [], rows: [] }); });
+    if (!best) { res.words.forEach(function (w) { w.ok = false; w.missing = w.subs.slice(); }); }
+    else best.al.rows.forEach(function (r, k) {
+      var f = tg.flat[k], w = res.words[f.wi];
+      w.rows.push(r);
+      if (r.k !== "ok") w.ok = false;
+      if (r.h) w.heard.push(r.h);
+      if (r.k === "del") w.missing.push(r.t);
+    });
+    res.type = tg.type;
+    res.nMissed = res.words.filter(function (w) { return !w.ok; }).length;
+    return res;
+  }
+
+  /* ---------------------------------------------------------------------------------------
+     2b. Phonetic units, syllable estimate, sentence type
+     --------------------------------------------------------------------------------------- */
+  var VOWEL_BASES = "aɑeɛəioɔuyøœ";
+  function ipaUnits(ipa) {
+    var s = String(ipa || "").normalize("NFD"), out = [], i;
+    for (i = 0; i < s.length; i++) {
+      var c = s[i];
+      if (c === " " || c === "/") continue;
+      var u = c;
+      while (s[i + 1] === "̃") { u += "̃"; i++; }
+      out.push(u);
+    }
+    return out;
+  }
+  function isVowelUnit(u) { return VOWEL_BASES.indexOf(u[0]) >= 0; }
+  /* nuclei in the IPA: nasal vowel = one, glides (j w ɥ) = none. hiatus = two vowels with no consonant between,
+     which an energy-only detector tends to merge. schwa = droppable e muet inside the phrase. */
+  function syllableEstimate(ipaText) {
+    var units = ipaUnits(ipaText), n = 0, hiatus = 0, schwa = 0, prevV = false;
+    units.forEach(function (u) {
+      var v = isVowelUnit(u);
+      if (v) { n++; if (prevV) hiatus++; if (u === "ə") schwa++; }
+      prevV = v;
+    });
+    var hi = n, lo = Math.max(Math.ceil(n * 0.5), n - hiatus - schwa);
+    return { n: n, lo: Math.max(1, lo), hi: hi, hiatus: hiatus, schwa: schwa };
+  }
+  function rhythmCountVerdict(detected, est) {
+    if (detected > est.hi + 1) return "added";
+    if (detected < est.lo - 1) return "squashed";
+    return "ok";
+  }
+  var WH = /^(qui|que|qu|quoi|ou|quand|comment|pourquoi|combien|quel|quelle|quels|quelles|lequel|laquelle|lesquels|lesquelles)$/;
+  function sentenceType(text) {
+    var t = String(text || "").trim(), last = t.slice(-1), subs = normSubs(t);
+    if (last === "?") {
+      if (subs[0] === "est" && subs[1] === "ce") return "question";
+      return WH.test(subs[0] || "") ? "whq" : "question";
+    }
+    if (last === "," || last === ";" || last === ":" || last === "…") return "continue";
+    return "statement";
+  }
+  var TYPE_NAMES = { statement: "a statement", question: "a yes/no question", whq: "a question with a question word", "continue": "a sentence that goes on" };
+
+  /* ---------------------------------------------------------------------------------------
+     2c. Sound patterns and tips
+     --------------------------------------------------------------------------------------- */
+  var PATTERNS = {
+    "y-pronoun": { label: "y = /i/", sym: "i", tip: "The pronoun y is just the vowel i, said short and light. Link it to the word before it, as in j'y, on y.", words: ["j'y vais", "on y va"] },
+    "nasal-an": { label: "an / en", sym: "ɑ̃", tip: "Open your mouth wide and send the vowel through your nose. Do not close with an n.", words: ["vent", "dans", "enfant"] },
+    "nasal-on": { label: "on", sym: "ɔ̃", tip: "Round your lips and let the sound ring in your nose. No n or ng at the end.", words: ["bon", "mon", "long"] },
+    "nasal-in": { label: "in / ain", sym: "ɛ̃", tip: "Spread your lips a little, like in è, and send the sound through your nose. No n at the end.", words: ["vin", "pain", "matin"] },
+    "nasal-un": { label: "un", sym: "œ̃", tip: "Round your lips slightly and let the vowel go through your nose. Many speakers now say it like in.", words: ["un", "lundi", "brun"] },
+    "u-y": { label: "u", sym: "y", tip: "Say i, keep the tongue exactly there, then round your lips as for ou. The sound stays bright, not dark.", words: ["tu", "rue", "du"] },
+    "ou-u": { label: "ou", sym: "u", tip: "Push your lips forward into a small circle and pull the tongue back. The sound is deep and dark.", words: ["tout", "vous", "roue"] },
+    "eu-ø": { label: "eu", sym: "ø", tip: "Say é, then round your lips as for o without moving the tongue. In peur and sœur the jaw opens a little more.", words: ["deux", "peu", "peur"] },
+    "r": { label: "r", sym: "ʁ", tip: "Keep the tip of the tongue down behind the lower teeth. Raise the back of the tongue toward the soft palate, like a soft gargle.", words: ["rue", "rouge", "merci"] },
+    "e-é": { label: "é / è", sym: "e ɛ", tip: "é is tight with the jaw almost closed. è is more open: the jaw drops a little.", words: ["thé", "tête", "mer"] },
+    "ui": { label: "ui", sym: "ɥi", tip: "Start with the lips round as for u, then glide quickly into i, all in one beat.", words: ["huit", "nuit", "depuis"] },
+    "gn": { label: "gn", sym: "ɲ", tip: "Press the middle of the tongue against the roof of your mouth for one soft ny sound. Do not say g and n separately.", words: ["montagne", "signe"] },
+    "j": { label: "j / ge", sym: "ʒ", tip: "Same mouth shape as sh, but let your throat hum. It is a buzzing sound.", words: ["je", "jour", "manger"] },
+    "ill": { label: "ill / y", sym: "j", tip: "Make a quick y glide, as at the start of yes. Keep it light and short.", words: ["travail", "fille", "payer"] },
+    "h-muet": { label: "h muet", sym: "", tip: "The h is silent. Say the word as if it began with its vowel and link it to the word before.", words: ["l'homme", "j'habite"] },
+    "liaison": { label: "liaison", sym: "", tip: "Link the last consonant of the first word to the vowel that starts the next one. Les amis sounds like lé-za-mi.", words: ["les amis", "vous avez"] },
+    "final-silent": { label: "silent end", sym: "", tip: "The last consonant is not pronounced in these words. Stop on the vowel.", words: ["petit", "grand", "trop"] }
+  };
+  var PRIORITY = ["y-pronoun", "nasal-an", "nasal-on", "nasal-in", "nasal-un", "u-y", "ou-u", "eu-ø", "r", "ui", "gn", "j", "ill", "e-é", "h-muet", "liaison", "final-silent"];
+  var UNIT_PATTERN = { "ɑ̃": "nasal-an", "ɔ̃": "nasal-on", "ɛ̃": "nasal-in", "œ̃": "nasal-un", "y": "u-y", "u": "ou-u", "ø": "eu-ø", "œ": "eu-ø", "ʁ": "r", "e": "e-é", "ɛ": "e-é", "ɥ": "ui", "ɲ": "gn", "ʒ": "j", "j": "ill" };
+  var LIAISON_WORDS = ["les", "des", "ces", "mes", "tes", "ses", "aux", "nous", "vous", "ils", "elles", "on", "un", "mon", "ton", "son", "en", "bon", "tres", "plus", "dans", "chez", "sans", "est", "sont", "ont", "quand", "grand", "petit", "cet", "leurs", "deux", "trois", "six", "dix", "vingt", "quels", "quelles"];
+  function startsVowelish(sub) { return /^[aeiouyh]/.test(sub); }
+  function silentFinal(sub) {
+    if (sub.length < 3) return false;
+    var last = sub[sub.length - 1];
+    if (!/[dgpstxz]/.test(last)) return false;
+    var u = ipaUnits(ipaTok(sub)), lastU = u[u.length - 1] || "";
+    return lastU !== last && !(last === "x" && lastU === "s") && !(last === "s" && /^[a-z]*s$/.test(sub) && lastU === "s");
+  }
+  /* sound patterns inside one subtoken. If the heard word is known, only the sounds that differ. */
+  function subPatterns(sub, heardSub, prevSub, opts) {
+    opts = opts || {};
+    var out = [], phon = [];
+    function add(p) { if (out.indexOf(p) < 0) out.push(p); }
+    var tu = ipaUnits(ipaTok(sub));
+    if (sub === "y") add("y-pronoun");
+    if (heardSub && !opts.all) {
+      var hu = ipaUnits(ipaTok(heardSub)), bad = diffUnits(tu, hu);
+      bad.forEach(function (u) { if (UNIT_PATTERN[u]) { add(UNIT_PATTERN[u]); phon.push(u); } });
+      if (!bad.length && !out.length) tu.forEach(function (u) { if (UNIT_PATTERN[u]) { add(UNIT_PATTERN[u]); phon.push(u); } });
+    } else tu.forEach(function (u) { if (UNIT_PATTERN[u]) { add(UNIT_PATTERN[u]); phon.push(u); } });
+    /* spelling-only patterns: added when the word was dropped or no sound difference explains the miss */
+    if (opts.all || !heardSub || !out.length) {
+      if (/^h/.test(sub) && sub.length > 1) add("h-muet");
+      if (silentFinal(sub)) add("final-silent");
+      if (prevSub && LIAISON_WORDS.indexOf(prevSub) >= 0 && startsVowelish(sub)) add("liaison");
+    }
+    return out;
+  }
+  /* target units that were replaced or dropped when aligned against the heard units */
+  function diffUnits(a, b) {
+    var n = a.length, m = b.length, D = [], i, j;
+    for (i = 0; i <= n; i++) { D[i] = []; D[i][0] = i; }
+    for (j = 0; j <= m; j++) D[0][j] = j;
+    for (i = 1; i <= n; i++) for (j = 1; j <= m; j++)
+      D[i][j] = Math.min(D[i - 1][j] + 1, D[i][j - 1] + 1, D[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    var bad = [];
+    i = n; j = m;
+    while (i > 0) {
+      if (j > 0 && D[i][j] === D[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)) { if (a[i - 1] !== b[j - 1]) bad.push(a[i - 1]); i--; j--; }
+      else if (D[i][j] === D[i - 1][j] + 1) { bad.push(a[i - 1]); i--; }
+      else j--;
+    }
+    return bad;
+  }
+  function patternsOfMissedWord(w, prevWord) {
+    var out = [];
+    w.rows.forEach(function (r, k) {
+      if (r.k === "ok") return;
+      var prev = k > 0 ? w.rows[k - 1].t : (prevWord ? prevWord.subs[prevWord.subs.length - 1] : null);
+      subPatterns(r.t, r.h, prev).forEach(function (p) { if (out.indexOf(p) < 0) out.push(p); });
+    });
+    return sortByPriority(out);
+  }
+  function sortByPriority(list) { return list.slice().sort(function (a, b) { return PRIORITY.indexOf(a) - PRIORITY.indexOf(b); }); }
+  /* every pattern a sentence contains (used to find a sentence that practises a sound) */
+  function patternsInSentence(text) {
+    var tg = prepareTarget(text), out = [], prev = null;
+    tg.words.forEach(function (w) {
+      w.subs.forEach(function (s) {
+        subPatterns(s, null, prev, { all: true }).forEach(function (p) { if (out.indexOf(p) < 0) out.push(p); });
+        prev = s;
+      });
+    });
+    return sortByPriority(out);
+  }
+
+  /* ---------------------------------------------------------------------------------------
+     2d. The coach (rules, no LLM)
+     --------------------------------------------------------------------------------------- */
+  var RHYTHM_TIPS = {
+    added: "You seem to have more syllables than the sentence has. A vowel often slips in after a final consonant: say bon, not bon-uh.",
+    squashed: "Some syllables seem squashed together. Say small words like le, de, je briefly but clearly.",
+    slow: "This was slower than natural speech. Join the words into one breath and aim for 4 to 5 syllables a second.",
+    uneven: "French gives every syllable about the same length and weight. Say it again with a steady beat, one tap per syllable."
+  };
+  var MELODY_TIPS = {
+    "question>flat": "A yes/no question should rise on the last syllable. Lift your voice at the end, as if keeping the question open.",
+    "question>falling": "A yes/no question should rise, yours fell. Lift your voice on the last syllable.",
+    "statement>rising": "A statement should drop at the end. Let your voice fall on the last syllable.",
+    "statement>flat": "Your voice stays level at the end. Let it fall a little on the last syllable.",
+    "whq>rising": "A question with a question word (où, comment) usually falls. Let your voice drop at the end.",
+    "continue>falling": "The comma means the sentence goes on. Keep your voice level or lift it slightly at the end."
+  };
+  /* plain verdict line about how the sentence ends */
+  var NEED = { statement: "A statement needs to fall at the end.", question: "A yes/no question needs to rise at the end.", whq: "A question with a question word usually falls.", "continue": "A sentence that goes on stays level or rises slightly." };
+  var RIGHT = { statement: "Right for a statement.", question: "Right for a yes/no question.", whq: "Right for a question with a question word.", "continue": "Right for a sentence that goes on." };
+  function melodyVerdict(type, ending) {
+    var dir = ending && ending.dir;
+    if (!dir || dir === "unknown") return { ok: null, line: "Not enough voiced sound to read the ending.", dir: "unknown" };
+    var okSet = { statement: ["falling"], question: ["rising"], whq: ["falling", "flat"], "continue": ["rising", "flat"] }[type] || ["falling"];
+    var good = okSet.indexOf(dir) >= 0;
+    return { ok: good, line: "Ends " + dir + ". " + (good ? (RIGHT[type] || RIGHT.statement) : (NEED[type] || NEED.statement)), dir: dir, key: type + ">" + dir };
+  }
+  /* ctx: {mode, words:[{raw, ok, patterns}] | null, recog:'ok'|string, rhythm:{verdict, rate, cv}|null, melody:{ok,key}|null}
+     returns {kind, title, tip, practice:[words], pattern} */
+  function coach(ctx) {
+    var i, w;
+    if (ctx.words && ctx.recog === "ok") {
+      var missed = ctx.words.filter(function (x) { return !x.ok; });
+      if (missed.length) {
+        for (i = 0; i < missed.length; i++) {
+          w = missed[i];
+          if (w.patterns && w.patterns.length) {
+            var p = w.patterns[0];
+            return { kind: "word", title: w.raw, tip: PATTERNS[p].tip, practice: PATTERNS[p].words, pattern: p, sym: PATTERNS[p].sym };
+          }
+        }
+        w = missed[0];
+        return { kind: "word", title: w.raw, tip: "Say " + w.raw + " slowly on its own, then back in the sentence. Listen to the model first.", practice: [w.raw], pattern: null, sym: "" };
+      }
+    }
+    var r = ctx.rhythm;
+    if (r) {
+      if (r.verdict === "added") return { kind: "rhythm", title: "Syllables", tip: RHYTHM_TIPS.added, practice: [], pattern: null };
+      if (r.verdict === "squashed") return { kind: "rhythm", title: "Syllables", tip: RHYTHM_TIPS.squashed, practice: [], pattern: null };
+      if (r.rate != null && r.rate < 3.0) return { kind: "rhythm", title: "Speed", tip: RHYTHM_TIPS.slow, practice: [], pattern: null };
+      if (r.cv != null && r.cv > 0.55) return { kind: "rhythm", title: "Evenness", tip: RHYTHM_TIPS.uneven, practice: [], pattern: null };
+    }
+    var m = ctx.melody;
+    if (m && m.ok === false && MELODY_TIPS[m.key]) return { kind: "melody", title: "Melody", tip: MELODY_TIPS[m.key], practice: [], pattern: null };
+    var anyData = (ctx.words && ctx.recog === "ok") || r || (m && m.ok !== null);
+    if (!anyData) return { kind: "none", title: "", tip: "", practice: [], pattern: null };
+    var checked = ctx.words && ctx.recog === "ok";
+    return { kind: "good", title: checked ? "Clean take" : "Rhythm and melody fine", tip: checked ? "Every word was understood. Say it faster, or try a longer sentence." : "Nothing to fix in rhythm or melody. The words were not checked.", practice: [], pattern: null };
+  }
+
+  /* history */
+  function topPatterns(attempts, n) {
+    var c = {};
+    (attempts || []).forEach(function (a) { (a.patterns || []).forEach(function (p) { c[p] = (c[p] || 0) + 1; }); });
+    return Object.keys(c).filter(function (p) { return PATTERNS[p]; }).map(function (p) { return { id: p, count: c[p] }; })
+      .sort(function (a, b) { return b.count - a.count || PRIORITY.indexOf(a.id) - PRIORITY.indexOf(b.id); }).slice(0, n || 3);
+  }
+
+  /* ---------------------------------------------------------------------------------------
+     3a. Vowel reference areas
+     F1/F2 below are APPROXIMATE adult male averages for French oral vowels, rounded from the
+     literature and the brief. They are not measured on Fan. Zones are deliberately generous
+     (about +-17 % in each formant). A "higher voice" toggle multiplies them by about 1.15.
+     --------------------------------------------------------------------------------------- */
+  var VOWELS = {
+    "i": { sym: "i", spell: "i", word: "si", f1: 270, f2: 2250, round: false },
+    "y": { sym: "y", spell: "u", word: "tu", f1: 270, f2: 1900, round: true },
+    "u": { sym: "u", spell: "ou", word: "tout", f1: 300, f2: 800, round: true },
+    "e": { sym: "e", spell: "é", word: "thé", f1: 390, f2: 2150, round: false },
+    "ø": { sym: "ø", spell: "eu", word: "deux", f1: 380, f2: 1450, round: true },
+    "o": { sym: "o", spell: "o, au", word: "beau", f1: 400, f2: 850, round: true },
+    "ɛ": { sym: "ɛ", spell: "è", word: "mer", f1: 530, f2: 1850, round: false },
+    "œ": { sym: "œ", spell: "eu (peur)", word: "peur", f1: 500, f2: 1450, round: true },
+    "ɔ": { sym: "ɔ", spell: "o ouvert", word: "pomme", f1: 550, f2: 950, round: true },
+    "a": { sym: "a", spell: "a", word: "la", f1: 720, f2: 1400, round: false }
+  };
+  var ZONE = 0.17; // radius in natural-log units (about +-17 %)
+  function vowelDistance(id, f1, f2, scale) {
+    var v = VOWELS[id], s = scale || 1;
+    var d1 = Math.log(f1 / (v.f1 * s)) / ZONE, d2 = Math.log(f2 / (v.f2 * s)) / ZONE;
+    return Math.sqrt(d1 * d1 + d2 * d2);
+  }
+  function classifyVowel(f1, f2, scale) {
+    var best = null, all = {};
+    Object.keys(VOWELS).forEach(function (id) {
+      var d = vowelDistance(id, f1, f2, scale);
+      all[id] = d;
+      if (!best || d < best.d) best = { id: id, d: d };
+    });
+    return { nearest: best.id, d: best.d, all: all };
+  }
+  var PAIR_ADVICE = {
+    "y>u": "Your tongue is too far back. Say i, keep the tongue forward, then round the lips.",
+    "u>y": "Your tongue is too far forward. Pull it back and push the lips out into a small circle.",
+    "y>i": "Your lips are too spread. Keep the tongue at i, but round the lips as for ou.",
+    "i>y": "Your lips are too round. Spread them as in a smile.",
+    "u>o": "The jaw is too open. Close it more and push the lips out.",
+    "e>ɛ": "The jaw is too open. Close it a little and keep the lips slightly spread.",
+    "ɛ>e": "The jaw is too closed. Let it drop a little.",
+    "ø>œ": "The jaw is too open. Close it a little, keep the lips round.",
+    "œ>ø": "The jaw is too closed. Open it a little, keep the lips round.",
+    "o>ɔ": "The jaw is too open. Close it a little and round the lips more.",
+    "ɔ>o": "The jaw is too closed. Open it a little.",
+    "ø>e": "Your lips are not round enough. Say é and round the lips as for o.",
+    "ø>y": "The tongue is too high. Lower it a little, lips round."
+  };
+  function vowelAdvice(targetId, nearestId, f1, f2, scale) {
+    var t = VOWELS[targetId], s = scale || 1;
+    if (nearestId !== targetId && PAIR_ADVICE[targetId + ">" + nearestId]) return PAIR_ADVICE[targetId + ">" + nearestId];
+    var d1 = Math.log(f1 / (t.f1 * s)), d2 = Math.log(f2 / (t.f2 * s)), parts = [];
+    if (d1 > 0.12) parts.push("The jaw is too open: close it a little.");
+    else if (d1 < -0.12) parts.push("The jaw is too closed: open it a little.");
+    if (d2 < -0.12) parts.push("The tongue is too far back: bring it forward.");
+    else if (d2 > 0.12) parts.push(t.round ? "The lips are not round enough: push them forward." : "The tongue is too far forward: draw it back a little.");
+    if (!parts.length) return "";
+    return parts.slice(0, 2).join(" ");
+  }
+  function vowelVerdict(targetId, f1, f2, scale) {
+    var c = classifyVowel(f1, f2, scale), t = VOWELS[targetId];
+    var dT = c.all[targetId], inZone = dT <= 1;
+    var line, tip = "";
+    if (inZone && c.nearest === targetId) line = "In the zone for " + t.spell + " /" + t.sym + "/.";
+    else if (inZone) { line = "In the zone for " + t.spell + ", but closer to " + VOWELS[c.nearest].spell + " /" + VOWELS[c.nearest].sym + "/."; }
+    else if (c.nearest === targetId) line = "Near " + t.spell + " /" + t.sym + "/, a little outside the zone.";
+    else line = "Closer to " + VOWELS[c.nearest].spell + " /" + VOWELS[c.nearest].sym + "/ than " + t.spell + " /" + t.sym + "/.";
+    if (!(inZone && c.nearest === targetId)) tip = vowelAdvice(targetId, c.nearest, f1, f2, scale);
+    return { inZone: inZone, nearest: c.nearest, distance: dT, line: line, tip: tip, all: c.all };
+  }
+
+  /* ---------------------------------------------------------------------------------------
+     3b. Sons cards and minimal-pair drills
+     --------------------------------------------------------------------------------------- */
+  var SONS = [
+    { id: "u-ou-i", glyph: "u · ou · i", ipa: "y  u  i", kind: "vowel", vowels: ["y", "u", "i"] },
+    { id: "e-e", glyph: "é · è", ipa: "e  ɛ", kind: "vowel", vowels: ["e", "ɛ"] },
+    { id: "eu", glyph: "eu · œ", ipa: "ø  œ", kind: "vowel", vowels: ["ø", "œ"] },
+    { id: "o", glyph: "o · o ouvert", ipa: "o  ɔ", kind: "vowel", vowels: ["o", "ɔ"] },
+    { id: "a", glyph: "a", ipa: "a", kind: "vowel", vowels: ["a"] },
+    { id: "nas", glyph: "an · on · in", ipa: "ɑ̃  ɔ̃  ɛ̃", kind: "drill" },
+    { id: "r", glyph: "r", ipa: "ʁ", kind: "drill" }
+  ];
+  var DRILLS = {
+    nas: [
+      { w: "bon", twin: "beau", pat: "nasal-on" }, { w: "mon", twin: "mot", pat: "nasal-on" },
+      { w: "vent", twin: "va", pat: "nasal-an" }, { w: "sans", twin: "sa", pat: "nasal-an" },
+      { w: "vin", twin: "vais", pat: "nasal-in" }, { w: "pain", twin: "pas", pat: "nasal-in" }
+    ],
+    r: [
+      { w: "rue", twin: "lu", pat: "r" }, { w: "roue", twin: "loup", pat: "r" },
+      { w: "rat", twin: "la", pat: "r" }, { w: "riz", twin: "lit", pat: "r" }, { w: "rire", twin: "lire", pat: "r" }
+    ]
+  };
+  /* alts: [{t, c}] from the recogniser. kind: ok (right word), twin (the minimal-pair word), other, none */
+  function drillResult(drill, alts) {
+    var want = ipaTok(drill.w), twin = ipaTok(drill.twin), heardAll = [], kind = "none", best = "";
+    (alts || []).forEach(function (a) { if (a && a.t) heardAll.push(String(a.t).trim()); });
+    if (!heardAll.length) return { ok: false, kind: "none", heard: "" };
+    var toks = [];
+    heardAll.forEach(function (h) { heardTokens(h).forEach(function (t) { toks.push(t); }); });
+    var isOk = toks.some(function (t) { return ipaTok(t) === want; });
+    if (isOk) return { ok: true, kind: "ok", heard: heardAll[0] };
+    var isTwin = toks.some(function (t) { return ipaTok(t) === twin; });
+    return { ok: false, kind: isTwin ? "twin" : "other", heard: heardAll[0] };
+  }
+
+  /* ---------------------------------------------------------------------------------------
+     3c. Libre: which words the recogniser was unsure about
+     segments: [{alts:[{t,c}]}]
+     --------------------------------------------------------------------------------------- */
+  function libreAnalysis(segments) {
+    var out = [];
+    (segments || []).forEach(function (seg) {
+      var alts = (seg.alts || []).filter(function (a) { return a && a.t; });
+      if (!alts.length) return;
+      var top = alts[0], tg = prepareTarget(top.t), T = tg.flat.map(function (f) { return f.t; });
+      var flag = {}, altFor = {};
+      alts.slice(1).forEach(function (a) {
+        var al = alignWords(T, heardTokens(a.t));
+        al.rows.forEach(function (r, k) { if (r.k !== "ok") { flag[k] = true; if (r.h) (altFor[k] = altFor[k] || []).push(r.h); } });
+      });
+      var words = tg.words.map(function (w) { return { raw: w.raw, subs: w.subs, unclear: false, alt: [], rows: [] }; });
+      tg.flat.forEach(function (f, k) {
+        var w = words[f.wi];
+        if (flag[k]) { w.unclear = true; (altFor[k] || []).forEach(function (h) { if (w.alt.indexOf(h) < 0) w.alt.push(h); }); }
+        w.rows.push({ t: f.t, h: (altFor[k] || [])[0] || null, k: flag[k] ? "sub" : "ok" });
+      });
+      var conf = top.c > 0 ? top.c : null;
+      out.push({ text: top.t, conf: conf, unsure: conf !== null && conf < 0.75, words: words });
+    });
+    return out;
+  }
+  function unclearForCoach(segs) {
+    var list = [], prev = null;
+    segs.forEach(function (s) {
+      s.words.forEach(function (w, i) {
+        var flagged = w.unclear || (s.unsure && s.words.length <= 2);
+        if (flagged) {
+          var pats = [];
+          w.rows.forEach(function (r) {
+            subPatterns(r.t, r.h, null, r.h ? {} : { all: true }).forEach(function (p) { if (pats.indexOf(p) < 0) pats.push(p); });
+          });
+          list.push({ raw: w.raw, ok: false, patterns: sortByPriority(pats) });
+        }
+      });
+    });
+    return list;
+  }
+
+  /* ---------------------------------------------------------------------------------------
+     3d. Sentence bank (96): the y/en/leur pronoun sentences from the grammar topics
+     (pc-ordre-mots, quel-pronom, futur-proche, accord-participe-cod), then everyday A2 lines.
+     --------------------------------------------------------------------------------------- */
+  var BANK = ["J'y ai habité.", "Elle n'y a pas habité.", "On doit y retourner.", "Je ne dois pas y retourner.", "Je m'y suis perdu.", "On aime y manger.", "Il y va.", "J'y irai.", "Elle leur a souvent parlé.", "J'en ai joué tous les mois.", "Il ne lui a pas parlé.", "Je les ai vus.", "Je n'y suis pas allé.", "Il faut y aller.", "Il va y rester.", "Je ne vais pas y aller.", "Elle leur a toujours donné raison.", "Je l'ai déjà vu.", "Je ne lui ai pas écrit.", "Elle ne l'a pas achetée.", "Elle ne va pas l'acheter.", "J'y pense depuis longtemps.", "Elle ne le quitte jamais.", "Je les prends en Irlande.", "Elle en joue.", "Nous en avons une.", "Elle nous demande des conseils.", "Il leur écrit.", "J'en reviens.", "Je la connais.", "Demain, je vais parler.", "Elle va l'adorer.", "Ils vont en avoir beaucoup.", "Elle ne va jamais le quitter.", "Nous allons prendre le train.", "Tu vas te reposer.", "Ils vont venir.", "Vous allez partir.", "Je vais y rester.", "Je les ai prises.", "Elle l'a achetée.", "Je vous ai remerciés.", "Il les a tenus.", "Il leur a écrit.", "Nous en avons eu une.", "Je l'ai prise.", "Je voudrais un pain, s'il vous plaît.", "Il fait très beau aujourd'hui.", "Où est la gare, s'il vous plaît ?", "Tu viens ce soir ?", "Vous parlez anglais ?", "Est-ce que vous avez du pain ?", "Peux-tu fermer la porte ?", "Il y a un bon restaurant près d'ici.", "Elle travaille à Lyon.", "La fille mange une orange.", "Il gagne sa vie à la montagne.", "Il a huit ans.", "Cette nuit, il a plu.", "Les amis arrivent à huit heures.", "Ils habitent en France depuis un an.", "Vous avez un grand appartement.", "Quelle heure est-il ?", "Je prends un café noir, sans sucre.", "Il neige sur les montagnes.", "J'ai bu un bon vin rouge.", "Le petit garçon mange un gros gâteau.", "Je veux un peu de beurre.", "Ma sœur a le cœur gros.", "Elle a peur de la rue la nuit.", "Je préfère le thé au café.", "Elle est très gentille.", "Tu es prêt ?", "Quand j'habitais à Lyon,", "Si tu veux,", "Du pain, du fromage, du vin,", "Il pleut, mais j'ai un parapluie.", "Où est le marché ?", "Mon frère joue du violon.", "C'est le plus beau jour de ma vie.", "Nous avons mangé au restaurant hier soir.", "Elle regarde la télévision tous les soirs.", "Je cherche une chambre près de la gare.", "Pouvez-vous répéter, s'il vous plaît ?", "On se retrouve devant la gare à midi.", "Je suis né en juillet.", "Il est tard, je dois rentrer.", "Le train part à huit heures dix.", "Vous voulez un autre café ?", "Les enfants jouent dans le jardin.", "Ce week-end, nous allons à la mer.", "Il fait chaud, mais il y a du vent.", "Je n'ai pas faim.", "Elle soigne son jardin.", "Il signe en bas de la page.", "Nous aimons la cuisine espagnole."];
+  var _bankPat = null;
+  function bankPatterns() { return _bankPat || (_bankPat = BANK.map(patternsInSentence)); }
+  /* next sentence (after `from`, wrapping) that contains the pattern; -1 if none */
+  function nextWithPattern(pattern, from) {
+    var bp = bankPatterns(), n = BANK.length;
+    for (var k = 1; k <= n; k++) {
+      var i = (from + k + n) % n;
+      if (bp[i].indexOf(pattern) >= 0) return i;
+    }
+    return -1;
+  }
+
+  return {
+    ipaPlain: ipaPlain, ipaSlashed: ipaSlashed, frPron: frPron,
+    normSubs: normSubs, heardTokens: heardTokens, prepareTarget: prepareTarget, alignWords: alignWords, matchWords: matchWords, lev: lev,
+    ipaUnits: ipaUnits, syllableEstimate: syllableEstimate, rhythmCountVerdict: rhythmCountVerdict, sentenceType: sentenceType, TYPE_NAMES: TYPE_NAMES,
+    PATTERNS: PATTERNS, PRIORITY: PRIORITY, subPatterns: subPatterns, patternsOfMissedWord: patternsOfMissedWord, patternsInSentence: patternsInSentence,
+    melodyVerdict: melodyVerdict, coach: coach, topPatterns: topPatterns, RHYTHM_TIPS: RHYTHM_TIPS, MELODY_TIPS: MELODY_TIPS,
+    VOWELS: VOWELS, ZONE: ZONE, classifyVowel: classifyVowel, vowelVerdict: vowelVerdict, vowelAdvice: vowelAdvice,
+    SONS: SONS, DRILLS: DRILLS, drillResult: drillResult, libreAnalysis: libreAnalysis, unclearForCoach: unclearForCoach,
+    BANK: BANK, bankPatterns: bankPatterns, nextWithPattern: nextWithPattern
+  };
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
+
+</script>
+<script id="app-section">
+/* ==========================================================================================
+   APP SECTION: everything that touches the page, the microphone, speech or storage.
+   Uses the pure DSP and TXT sections above. No network calls of its own.
+   ========================================================================================== */
+(function () {
+  'use strict';
+
+  /* ---------- tiny helpers ---------- */
+  function $(id) { return document.getElementById(id); }
+  function h(tag, props, kids) {
+    var e = document.createElement(tag);
+    if (props) Object.keys(props).forEach(function (k) {
+      var v = props[k];
+      if (v == null || v === false) return;
+      if (k === 'class') e.className = v;
+      else if (k === 'text') e.textContent = v;
+      else if (k === 'html') e.innerHTML = v;
+      else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? '' : v);
+    });
+    (kids || []).forEach(function (c) { if (c == null || c === false) return; e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c); });
+    return e;
+  }
+  var NS = 'http://www.w3.org/2000/svg';
+  function sv(tag, props, kids) {
+    var e = document.createElementNS(NS, tag);
+    if (props) Object.keys(props).forEach(function (k) { if (props[k] != null) e.setAttribute(k, props[k]); });
+    (kids || []).forEach(function (c) { if (c) e.appendChild(c); });
+    return e;
+  }
+  function svgText(x, y, s, extra) { var t = sv('text', Object.assign({ x: x, y: y, 'font-size': 9 }, extra || {})); t.textContent = s; return t; }
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+  function clear(el) { while (el.firstChild) el.removeChild(el.firstChild); return el; }
+  function fmt(v, d) { return v == null || isNaN(v) ? 'n/a' : v.toFixed(d == null ? 1 : d); }
+
+  var store = {
+    get: function (k, d) { try { var v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } },
+    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { } }
+  };
+
+  var ICON = {
+    mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>',
+    stop: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="1.5" fill="currentColor"/></svg>',
+    spk: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z"/><path d="M17 8.5a5 5 0 0 1 0 7"/></svg>',
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
+    again: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.6-5.9"/><path d="M4 4.5v5h5"/></svg>',
+    prev: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg>',
+    next: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 6l6 6-6 6"/></svg>',
+    auto: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7.5"/><path d="M12 4.5v15a7.5 7.5 0 0 0 0-15z" fill="currentColor"/></svg>',
+    sun: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>',
+    moon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg>'
+  };
+
+  var BANK = TXT.BANK;
+  var SR_CLASS = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+
+  /* ---------- state ---------- */
+  var S = {
+    mode: store.get('dl-mode', 'phrases'),
+    idx: clamp(parseInt(store.get('dl-idx', '0'), 10) || 0, 0, BANK.length - 1),
+    custom: '',
+    wordsOn: store.get('dl-words', 'on') !== 'off',
+    higher: store.get('dl-higher', '0') === '1',
+    son: { card: 'u-ou-i', target: 'y', grp: 'nasal-on', di: 0 },
+    res: { phrases: null, libre: null, sons: null },
+    take: { phrases: null, libre: null, sons: null },
+    busy: false
+  };
+  if (['phrases', 'sons', 'libre'].indexOf(S.mode) < 0) S.mode = 'phrases';
+  var ATT = (function () { try { var a = JSON.parse(store.get('dl-attempts', '[]')); return Array.isArray(a) ? a : []; } catch (e) { return []; } })();
+  function saveAttempt(a) {
+    ATT.push(a);
+    if (ATT.length > 300) ATT = ATT.slice(-300);
+    store.set('dl-attempts', JSON.stringify(ATT));
+  }
+
+  /* ---------- toast ---------- */
+  var toastTimer = null;
+  function toast(msg) {
+    var t = $('toast'); t.firstChild.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
+  }
+
+  /* ---------- theme (auto / light / dark) ---------- */
+  function applyTheme(m) {
+    var root = document.documentElement;
+    if (m === 'light' || m === 'dark') root.setAttribute('data-theme', m); else root.removeAttribute('data-theme');
+    store.set('dl-theme', m);
+    Array.prototype.forEach.call($('theme').children, function (b) { b.setAttribute('aria-pressed', b.dataset.m === m ? 'true' : 'false'); });
+  }
+  function buildTheme() {
+    var box = clear($('theme'));
+    [['auto', 'Follow the device'], ['light', 'Light'], ['dark', 'Dark']].forEach(function (x) {
+      var b = h('button', { type: 'button', 'data-m': x[0], 'aria-label': x[1], title: x[1], html: ICON[x[0] === 'auto' ? 'auto' : (x[0] === 'light' ? 'sun' : 'moon')], onclick: function () { applyTheme(x[0]); } });
+      box.appendChild(b);
+    });
+    var m = store.get('dl-theme', 'auto'); if (['auto', 'light', 'dark'].indexOf(m) < 0) m = 'auto';
+    applyTheme(m);
+  }
+
+  /* ---------- French speech (TTS): fr-FR default, volume 1, Normal / Plus lent, own voice remembered ---------- */
+  var synth = window.speechSynthesis || null, frVoices = [], frVoice = null, speakingBtn = null;
+  function pickVoice() {
+    if (!synth) return;
+    var vs = []; try { vs = synth.getVoices() || []; } catch (e) { vs = []; }
+    var fr = vs.filter(function (v) { return v && v.lang && /^fr/i.test(v.lang); }), seen = {};
+    fr = fr.filter(function (v) { var k = v.name + '|' + v.lang; if (seen[k]) return false; seen[k] = true; return true; });
+    fr.sort(function (a, b) {
+      var A = /^fr[-_]fr$/i.test(a.lang) ? 1 : 0, B = /^fr[-_]fr$/i.test(b.lang) ? 1 : 0;
+      if (A !== B) return B - A;
+      return (b.localService ? 1 : 0) - (a.localService ? 1 : 0);
+    });
+    frVoices = fr;
+    var uri = store.get('dl-voice', null), saved = uri ? fr.filter(function (v) { return v.voiceURI === uri; })[0] : null;
+    frVoice = saved || fr[0] || null;
+    refreshVoiceHosts();
+  }
+  function rateNow() { return store.get('dl-rate', 'normal') === 'lent' ? 0.65 : 0.9; }
+  function stopSpeech() { if (synth) { try { synth.cancel(); } catch (e) { } } if (speakingBtn) { speakingBtn.classList.remove('on'); speakingBtn = null; } }
+  function say(text, btn) {
+    if (!synth || !text) { toast('This browser cannot speak French.'); return; }
+    try {
+      stopPlayback();
+      synth.cancel();
+      var u = new SpeechSynthesisUtterance(String(text));
+      u.lang = 'fr-FR'; if (frVoice) u.voice = frVoice;
+      u.rate = rateNow(); u.pitch = 1; u.volume = 1;
+      if (btn) {
+        btn.classList.add('on'); speakingBtn = btn;
+        u.onend = u.onerror = function () { btn.classList.remove('on'); if (speakingBtn === btn) speakingBtn = null; };
+      }
+      try { if (navigator.audioSession && navigator.audioSession.type !== 'playback') navigator.audioSession.type = 'playback'; } catch (e) { }
+      synth.speak(u);
+    } catch (e) { }
+  }
+  function spkBtn(getText, small, label) {
+    var b = h('button', { type: 'button', class: 'spk' + (small ? ' sm' : ''), 'aria-label': label || 'Listen', title: label || 'Listen', html: ICON.spk });
+    b.addEventListener('click', function () { say(typeof getText === 'function' ? getText() : getText, b); });
+    return b;
+  }
+  var voiceHosts = [];
+  function voiceHost() {
+    var d = h('div', { class: 'voicerow' }); voiceHosts.push(d); fillVoice(d); return d;
+  }
+  function fillVoice(d) {
+    clear(d);
+    var cur = store.get('dl-rate', 'normal');
+    var seg = h('div', { class: 'seg sm', role: 'group', 'aria-label': 'Voice speed' });
+    [['normal', 'Normal'], ['lent', 'Plus lent']].forEach(function (x) {
+      seg.appendChild(h('button', { type: 'button', 'aria-pressed': cur === x[0] ? 'true' : 'false', text: x[1], onclick: function () { store.set('dl-rate', x[0]); refreshVoiceHosts(); } }));
+    });
+    d.appendChild(seg);
+    if (frVoices.length > 1) {
+      var sel = h('select', { 'aria-label': 'French voice' });
+      frVoices.forEach(function (v) { var o = h('option', { value: v.voiceURI, text: v.name + ' (' + v.lang + ')' }); if (frVoice && frVoice.voiceURI === v.voiceURI) o.selected = true; sel.appendChild(o); });
+      sel.addEventListener('change', function () {
+        var v = frVoices.filter(function (x) { return x.voiceURI === sel.value; })[0];
+        if (v) { frVoice = v; store.set('dl-voice', v.voiceURI); }
+      });
+      d.appendChild(sel);
+    }
+  }
+  function refreshVoiceHosts() { voiceHosts.forEach(fillVoice); }
+
+  /* ---------- can this page use the microphone? ---------- */
+  var MIC_MSG = 'The microphone cannot be used here. Open this page in Chrome or Safari at its own address.';
+  function micProblem() {
+    try { if (window.top !== window.self) return MIC_MSG; } catch (e) { return MIC_MSG; }
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return MIC_MSG;
+    if (window.isSecureContext === false) return MIC_MSG;
+    if (!(window.AudioContext || window.webkitAudioContext)) return 'This browser cannot analyse audio. Open this page in Chrome or Safari.';
+    return null;
+  }
+  function showMicNote(msg) {
+    var n = $('micNote');
+    if (msg) { n.textContent = msg; n.hidden = false; } else { n.textContent = ''; n.hidden = true; }
+  }
+
+  /* ---------- playback of my take ---------- */
+  var playAudio = null, playUrl = null;
+  function stopPlayback() {
+    if (playAudio) { try { playAudio.pause(); } catch (e) { } playAudio = null; }
+    if (playUrl) { try { URL.revokeObjectURL(playUrl); } catch (e) { } playUrl = null; }
+    var b = $('act-take'); if (b) b.firstChild.classList.remove('on');
+  }
+  function playTake() {
+    var t = S.take[curKey()];
+    if (!t) return;
+    if (playAudio) { stopPlayback(); return; }
+    stopSpeech();
+    try {
+      var wav = new Blob([DSP.encodeWav(t.pcm, t.sr)], { type: 'audio/wav' });
+      playUrl = URL.createObjectURL(wav);
+      playAudio = new Audio(playUrl);
+      try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) { }
+      playAudio.onended = playAudio.onerror = stopPlayback;
+      var b = $('act-take'); if (b) b.firstChild.classList.add('on');
+      var p = playAudio.play(); if (p && p.catch) p.catch(function () { stopPlayback(); toast('Playback was blocked. Tap again.'); });
+    } catch (e) { stopPlayback(); }
+  }
+  function curKey() { return S.mode; }
+
+  /* ==========================================================================================
+     Recording engine. Order matters for Safari/iOS: the microphone stream and the audio capture
+     are opened FIRST, then word recognition is started. If both cannot run together on a
+     device, the audio comes back silent or the track ends. That is detected after the take and
+     said plainly (see takeAudioState and the "Record audio only" button).
+     ========================================================================================== */
+  var REC = null;   // the take in progress
+
+  function startTake(cfg) {
+    if (REC || S.busy) return;
+    var prob = micProblem();
+    if (prob) { showMicNote(prob); setDock(); return; }
+    var ctl = REC = {
+      cfg: cfg, chunks: [], total: 0, sr: 44100, done: false, cancelled: false, vad: null, stream: null, ctx: null, node: null, src: null,
+      rs: { state: cfg.words ? 'pending' : 'off', segs: [], err: null }, sr_: null, trackEnded: false, peak: 0, speechSeen: false, t: 0, target: cfg.target
+    };
+    ctl.vad = DSP.createVad({ silenceStop: cfg.silence || 1.2, maxSec: cfg.maxSec || 12, holdSec: cfg.hold || 0, noSpeechSec: 8 });
+    stopSpeech(); stopPlayback();
+    setDock();
+    try { if (navigator.audioSession) navigator.audioSession.type = 'play-and-record'; } catch (e) { }
+    var AC = window.AudioContext || window.webkitAudioContext;
+    try { ctl.ctx = new AC(); if (ctl.ctx.state === 'suspended') ctl.ctx.resume(); }
+    catch (e) { REC = null; showMicNote('This browser cannot analyse audio. Open this page in Chrome or Safari.'); setDock(); return; }
+    navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 } })
+      .then(function (stream) {
+        ctl.stream = stream;
+        var tr = stream.getAudioTracks()[0];
+        if (tr) { tr.onended = function () { ctl.trackEnded = true; }; }
+        if (ctl.cancelled) { return Promise.reject({ name: 'Cancelled' }); }
+        return attachCapture(ctl);
+      })
+      .then(function () {
+        if (ctl.cancelled) return;
+        showMicNote(null);
+        startRecognition(ctl);
+        setDock();
+      })
+      .catch(function (err) { failTake(ctl, err); });
+  }
+
+  function attachCapture(ctl) {
+    var ctx = ctl.ctx, src = ctx.createMediaStreamSource(ctl.stream);
+    ctl.src = src; ctl.sr = ctx.sampleRate;
+    var mute = ctx.createGain(); mute.gain.value = 0; mute.connect(ctx.destination); ctl.mute = mute;
+    function onChunk(f32) { handleChunk(ctl, f32); }
+    function viaScriptProcessor() {
+      var sp = ctx.createScriptProcessor(2048, 1, 1);
+      sp.onaudioprocess = function (e) { onChunk(new Float32Array(e.inputBuffer.getChannelData(0))); };
+      src.connect(sp); sp.connect(mute); ctl.node = sp;
+    }
+    if (ctx.audioWorklet && typeof AudioWorkletNode !== 'undefined' && typeof Blob !== 'undefined') {
+      try {
+        var code = 'class DLCap extends AudioWorkletProcessor{constructor(){super();this.b=new Float32Array(2048);this.n=0}' +
+          'process(inp){var c=inp[0]&&inp[0][0];if(c){for(var i=0;i<c.length;i++){this.b[this.n++]=c[i];if(this.n===2048){this.port.postMessage(this.b.slice(0));this.n=0}}}return true}}' +
+          'registerProcessor("dl-cap",DLCap)';
+        var url = URL.createObjectURL(new Blob([code], { type: 'text/javascript' }));
+        return ctx.audioWorklet.addModule(url).then(function () {
+          URL.revokeObjectURL(url);
+          var node = new AudioWorkletNode(ctx, 'dl-cap', { numberOfInputs: 1, numberOfOutputs: 1, channelCount: 1, channelCountMode: 'explicit' });
+          node.port.onmessage = function (e) { onChunk(e.data); };
+          src.connect(node); node.connect(mute); ctl.node = node;
+        }).catch(function () { viaScriptProcessor(); });
+      } catch (e) { viaScriptProcessor(); return Promise.resolve(); }
+    }
+    viaScriptProcessor();
+    return Promise.resolve();
+  }
+
+  function handleChunk(ctl, f32) {
+    if (ctl.done) return;
+    ctl.chunks.push(f32); ctl.total += f32.length;
+    var r = DSP.rmsOf(f32), dt = f32.length / ctl.sr;
+    for (var i = 0; i < f32.length; i += 64) { var a = Math.abs(f32[i]); if (a > ctl.peak) ctl.peak = a; }
+    var o = ctl.vad.push(r, dt);
+    ctl.speechSeen = o.started; ctl.t = ctl.total / ctl.sr;
+    paintMeter(r, ctl.t);
+    if (o.stop) finishTake(ctl, o.stop);
+  }
+  var meterRaf = 0;
+  function paintMeter(r, t) {
+    var lvl = clamp((20 * Math.log10(r + 1e-6) + 62) / 50, 0, 1);
+    var m = $('meter'); if (!m) return;
+    m.style.setProperty('--lvl', lvl.toFixed(3));
+    m.classList.toggle('hot', lvl > 0.97);
+    var tm = $('mtime'); if (tm) tm.textContent = t.toFixed(1) + ' s';
+  }
+
+  /* ---------- word recognition ---------- */
+  function startRecognition(ctl) {
+    var st = ctl.rs;
+    if (!ctl.cfg.words) { st.state = 'off'; return; }
+    if (!SR_CLASS) { st.state = 'unsupported'; return; }
+    var r;
+    try { r = new SR_CLASS(); } catch (e) { st.state = 'unsupported'; return; }
+    ctl.sr_ = r;
+    try {
+      r.lang = 'fr-FR'; r.maxAlternatives = 3; r.continuous = true; r.interimResults = false;
+      r.onresult = function (ev) {
+        for (var i = ev.resultIndex; i < ev.results.length; i++) {
+          var res = ev.results[i]; if (!res.isFinal) continue;
+          var alts = [];
+          for (var k = 0; k < res.length; k++) alts.push({ t: res[k].transcript, c: res[k].confidence });
+          st.segs.push({ alts: alts });
+        }
+      };
+      r.onerror = function (ev) { st.err = (ev && ev.error) || 'error'; };
+      r.onend = function () { st.ended = true; if (ctl.srWait) { var f = ctl.srWait; ctl.srWait = null; f(); } };
+      r.start(); st.state = 'running';
+    } catch (e) { st.state = 'error'; st.err = 'start-failed'; }
+  }
+  function stopRecognition(ctl) {
+    return new Promise(function (resolve) {
+      var r = ctl.sr_;
+      if (!r || ctl.rs.ended || ctl.rs.state !== 'running') { resolve(); return; }
+      var done = false;
+      function fin() { if (done) return; done = true; resolve(); }
+      ctl.srWait = fin;
+      setTimeout(function () { try { r.abort(); } catch (e) { } fin(); }, 3200);
+      try { r.stop(); } catch (e) { fin(); }
+    });
+  }
+  function recogSummary(ctl) {
+    var st = ctl.rs;
+    if (!ctl.cfg.words || st.state === 'off') return { state: 'off' };
+    if (st.state === 'unsupported') return { state: 'unsupported' };
+    var segs = st.segs.filter(function (s) { return s.alts.length && String(s.alts[0].t).trim(); });
+    if (segs.length) return { state: 'ok', segs: segs };
+    var e = st.err;
+    if (!e || e === 'no-speech' || e === 'aborted') return { state: 'no-speech' };
+    return { state: e };
+  }
+  function recogMessage(state, mode) {
+    var tail = mode === 'phrases' ? ' Rhythm and melody still work.' : '';
+    var m = {
+      unsupported: 'This browser has no word recognition.' + tail,
+      'not-allowed': 'Word recognition is blocked on this device.' + tail,
+      'service-not-allowed': 'Word recognition is switched off on this device (dictation or Siri).' + tail,
+      network: 'Word recognition could not reach its online service.' + tail,
+      'no-speech': 'The recogniser heard no words.',
+      'audio-capture': 'The recogniser could not use the microphone.' + tail,
+      'start-failed': 'Word recognition could not start here.' + tail,
+      'language-not-supported': 'French recognition is not available on this device.' + tail,
+      off: 'Word check is off.' + tail
+    };
+    return m[state] || ('Word recognition failed (' + state + ').' + tail);
+  }
+
+  /* ---------- finishing a take ---------- */
+  function failTake(ctl, err) {
+    cleanupTake(ctl);
+    REC = null;
+    var n = (err && err.name) || '';
+    if (n === 'Cancelled' || ctl.cancelled) { setDock(); return; }
+    if (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError') showMicNote('Microphone blocked. Allow it for this page in the browser settings, then tap record again.');
+    else if (n === 'NotFoundError' || n === 'OverconstrainedError') showMicNote('No microphone found.');
+    else showMicNote('The microphone could not start' + (n ? ' (' + n + ')' : '') + '. Open this page in Chrome or Safari at its own address.');
+    setDock();
+  }
+  function cleanupTake(ctl) {
+    try { if (ctl.node) { ctl.node.onaudioprocess = null; if (ctl.node.port) ctl.node.port.onmessage = null; ctl.node.disconnect(); } } catch (e) { }
+    try { if (ctl.src) ctl.src.disconnect(); } catch (e) { }
+    try { if (ctl.stream) ctl.stream.getTracks().forEach(function (t) { t.stop(); }); } catch (e) { }
+    try { if (ctl.ctx && ctl.ctx.state !== 'closed') ctl.ctx.close(); } catch (e) { }
+    try { if (navigator.audioSession) navigator.audioSession.type = 'auto'; } catch (e) { }
+  }
+  function finishTake(ctl, why) {
+    if (ctl.done) return;
+    ctl.done = true;
+    if (why === 'user' && ctl.total === 0) { ctl.cancelled = true; cleanupTake(ctl); REC = null; setDock(); return; }
+    cleanupTake(ctl);
+    S.busy = true; setDock('processing');
+    stopRecognition(ctl).then(function () {
+      var pcm = DSP.concatChunks(ctl.chunks, ctl.total);
+      var take = { pcm: pcm, sr: ctl.sr, why: why, target: ctl.target, recog: recogSummary(ctl), trackEnded: ctl.trackEnded, peak: ctl.peak, speechSeen: ctl.speechSeen, dur: pcm.length / ctl.sr, words: ctl.cfg.words };
+      take.audioState = takeAudioState(take);
+      REC = null;
+      setTimeout(function () {
+        try { ctl.cfg.onDone(take); } catch (e) { if (window.console) console.error(e); toast('Something went wrong in the analysis.'); }
+        S.busy = false; setDock();
+      }, 40);
+    });
+  }
+  /* 'ok' | 'short' | 'nospeech' | 'dead' (silence while recognition was running, or the track ended) | 'quiet' */
+  function takeAudioState(t) {
+    if (t.dur < 0.45) return 'short';
+    if (t.peak < 1e-6 || t.trackEnded && t.peak < 1e-4) return 'dead';
+    if (!t.speechSeen || t.peak < 4e-4) return 'nospeech';
+    return 'ok';
+  }
+  function stopNow() { if (REC && !REC.done) finishTake(REC, 'user'); }
+
+  /* ---------- the dock: record button bottom-left, extra actions to its right ---------- */
+  var HINTS = { phrases: 'Tap, say the sentence, then pause.', sons: 'Tap, then say it.', libre: 'Tap and speak freely.' };
+  function hasTake() { return !!S.take[S.mode] && !!S.res[S.mode]; }
+  function hasModel() {
+    if (S.mode === 'libre') return false;
+    return true;
+  }
+  function modelText() {
+    if (S.mode === 'phrases') return currentTarget();
+    if (S.mode === 'sons') {
+      var c = TXT.SONS.filter(function (x) { return x.id === S.son.card; })[0];
+      if (c.kind === 'vowel') return TXT.VOWELS[S.son.target].word;
+      return currentDrill().w;
+    }
+    return '';
+  }
+  function setDock(forceState) {
+    var box = clear($('dockin')), live = !!REC && !REC.done && !!REC.stream && REC.src && !REC.cancelled && REC.node;
+    var arming = !!REC && !REC.done && !live;
+    var processing = forceState === 'processing' || S.busy;
+    var prob = micProblem();
+    var rec = h('button', { type: 'button', id: 'rec', class: 'rec' + (live ? ' live' : ''), 'aria-label': live ? 'Stop recording' : 'Record', html: live ? ICON.stop : ICON.mic, onclick: onRecClick });
+    if (prob) rec.setAttribute('aria-disabled', 'true');
+    box.appendChild(rec);
+    var side = h('div', { class: 'dockside' });
+    if (live) {
+      side.appendChild(h('div', { class: 'meterbox' }, [h('div', { class: 'meter', id: 'meter', role: 'progressbar', 'aria-label': 'Input level' }, [h('i')]), h('small', { id: 'mtime', text: '0.0 s' })]));
+    } else if (arming) {
+      side.appendChild(h('p', { class: 'hint', text: 'Starting the microphone...' }));
+    } else if (processing) {
+      side.appendChild(h('div', { class: 'busy' }, [h('span', { class: 'dots' }, [h('i'), h('i'), h('i')]), h('span', { text: 'Analysing' })]));
+    } else if (hasTake()) {
+      side.appendChild(act('act-take', ICON.play, 'My take', playTake));
+      if (hasModel()) side.appendChild(act('act-model', ICON.spk, 'Model', function (ev) { say(modelText(), ev.currentTarget.firstChild); }));
+      side.appendChild(act('act-again', ICON.again, 'Try again', function () { clearResult(); startRec(); }));
+    } else {
+      side.appendChild(h('p', { class: 'hint', text: HINTS[S.mode] }));
+    }
+    box.appendChild(side);
+    var dk = $('dock'); document.documentElement.style.setProperty('--dockh', (dk.offsetHeight || 104) + 'px');
+  }
+  function act(id, icon, label, fn) {
+    var b = h('button', { type: 'button', class: 'act', id: id, 'aria-label': label, onclick: fn }, [h('span', { class: 'btn rbtn', html: icon }), h('small', { text: label })]);
+    return b;
+  }
+  function onRecClick() {
+    if (REC) { stopNow(); return; }
+    if (S.busy) return;
+    startRec();
+  }
+  function startRec() {
+    var m = S.mode, SRok = !!SR_CLASS;
+    if (m === 'phrases') startTake({ target: currentTarget(), words: S.wordsOn && SRok, maxSec: 12, silence: 1.2, onDone: onPhraseDone });
+    else if (m === 'libre') startTake({ target: '', words: S.wordsOn && SRok, maxSec: 12, silence: 1.2, onDone: onLibreDone });
+    else {
+      var c = TXT.SONS.filter(function (x) { return x.id === S.son.card; })[0];
+      if (c.kind === 'vowel') startTake({ target: S.son.target, words: false, maxSec: 7, silence: 1.0, hold: 2.0, onDone: onVowelDone });
+      else startTake({ target: currentDrill().w, words: true, maxSec: 6, silence: 0.9, onDone: onDrillDone });
+    }
+  }
+  function clearResult() {
+    var k = S.mode; S.res[k] = null; S.take[k] = null; stopPlayback();
+    var out = k === 'phrases' ? $('phOut') : (k === 'libre' ? $('liOut') : $('soOut'));
+    if (out) clear(out);
+    setDock();
+  }
+
+  /* ==========================================================================================
+     Result blocks (small visual blocks, least text)
+     ========================================================================================== */
+  function block(label, tag, tagCls, body) {
+    return h('section', { class: 'blk' }, [
+      h('div', { class: 'blk-h' }, [h('span', { class: 'lb', text: label }), tag ? h('span', { class: 'tag ' + (tagCls || ''), text: tag }) : null]),
+      body
+    ]);
+  }
+  function plain(text) { return h('p', { class: 'plain', text: text }); }
+
+  /* a. Words understood */
+  function wordsBlock(res, mode) {
+    if (res.recog.state !== 'ok') {
+      return block('Words', null, '', plain(recogMessage(res.recog.state, mode)));
+    }
+    var m = res.match, pills = h('div', { class: 'pills' });
+    m.words.forEach(function (w) {
+      var p = h('span', { class: 'wp' + (w.ok ? '' : ' bad') }, [h('span', { text: w.raw })]);
+      if (!w.ok) {
+        var said = w.heard.length ? w.heard.join(' ') : '';
+        var txt = said ? 'heard: ' + said : 'heard: nothing';
+        if (said && w.missing.length) txt += ', no ' + w.missing.join(', ');
+        p.appendChild(h('small', { text: txt }));
+      }
+      pills.appendChild(p);
+    });
+    var conf = m.confidence, tag = null, cls = '';
+    if (conf != null && conf > 0) { if (conf >= 0.8) { tag = 'clear'; cls = 'ok'; } else { tag = 'unsure'; cls = 'warn'; } }
+    var body = h('div', {}, [pills]);
+    if (m.nMissed === 0) body.appendChild(h('p', { class: 'cap', text: 'Every word was understood.' }));
+    return block('Words', tag, cls, body);
+  }
+
+  /* gauge: value on a track with a shaded good zone */
+  function gauge(value, min, max, zlo, zhi) {
+    var W = 100, x = function (v) { return clamp((v - min) / (max - min), 0, 1) * W; };
+    var s = sv('svg', { viewBox: '0 0 100 14', class: 'gauge', 'aria-hidden': 'true', preserveAspectRatio: 'none' });
+    s.style.width = '100%'; s.style.height = '14px';
+    s.appendChild(sv('rect', { x: 0, y: 5, width: W, height: 4, rx: 2, class: 'g-track' }));
+    s.appendChild(sv('rect', { x: x(zlo), y: 3, width: x(zhi) - x(zlo), height: 8, rx: 1, class: 'g-zone' }));
+    if (value != null && !isNaN(value)) s.appendChild(sv('rect', { x: x(value) - 1.5, y: 0, width: 3, height: 14, rx: 1, class: 'g-mark' }));
+    return s;
+  }
+  function rhythmBars(a) {
+    var sy = a.syll, W = 320, H = 84, pad = 8, base = 74, n = sy.n;
+    var s = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': n + ' syllable peaks' });
+    var t0 = Math.max(0, sy.region[0] - 0.08), t1 = Math.max(t0 + 0.5, sy.region[1] + 0.08), sx = (W - 2 * pad) / (t1 - t0);
+    s.appendChild(sv('line', { x1: pad, y1: base + 0.5, x2: W - pad, y2: base + 0.5, class: 'axis' }));
+    for (var i = 0; i < n; i++) {
+      var cx = pad + (sy.times[i] - t0) * sx, bw = clamp(sy.widths[i] * sx * 0.75, 5, 36), hgt = 66 * clamp(1 + sy.dB[i] / 26, 0.18, 1);
+      var last = i === n - 1;
+      s.appendChild(sv('rect', { x: (cx - bw / 2).toFixed(1), y: (base - hgt).toFixed(1), width: bw.toFixed(1), height: hgt.toFixed(1), rx: 2, class: 'bar' + (last ? ' last' : '') }));
+      if (last) s.appendChild(svgText((cx).toFixed(1), (base - hgt - 4).toFixed(1), 'last', { 'text-anchor': 'middle', 'font-size': 9 }));
+    }
+    return s;
+  }
+  /* b. Rhythm (estimate) */
+  function rhythmBlock(res) {
+    if (res.audioState !== 'ok') return block('Rhythm', null, '', plain(audioMsg(res)));
+    var r = res.rhythm, a = res.a, est = res.est;
+    var expTxt = est ? (est.lo === est.hi ? 'expected ' + est.hi : 'expected ' + est.lo + ' to ' + est.hi) : '';
+    var rateWord = r.rate == null ? '' : (r.rate < 3 ? 'slow' : (r.rate < 4 ? 'a bit slow' : (r.rate <= 6 ? 'natural' : 'fast')));
+    var cvWord = r.cv == null ? '' : (r.cv <= 0.35 ? 'even' : (r.cv <= 0.55 ? 'a bit uneven' : 'uneven'));
+    var stats = h('div', { class: 'stats' }, [
+      h('div', { class: 'stat' }, [h('b', { text: String(r.n) }), h('small', { text: 'syllables' }), expTxt ? h('i', { text: expTxt }) : null]),
+      h('div', { class: 'stat' }, [h('b', { text: r.rate == null ? 'n/a' : fmt(r.rate, 1) }), h('small', { text: 'per second' }), gauge(r.rate, 0, 8, 4, 6), h('i', { text: rateWord })]),
+      h('div', { class: 'stat' }, [h('b', { text: r.cv == null ? 'n/a' : fmt(r.cv, 2) }), h('small', { text: 'evenness' }), gauge(r.cv == null ? null : r.cv, 0, 0.8, 0, 0.35), h('i', { text: cvWord })])
+    ]);
+    var body = h('div', {}, [stats, h('div', { class: 'svgbox' }, [rhythmBars(a)])]);
+    if (r.n < 2) body.appendChild(h('p', { class: 'cap', text: 'Too few syllables found to say more.' }));
+    else {
+      var line = r.lastLonger == null ? '' : 'Last syllable: ' + (r.lastLonger ? 'a little longer, as in French.' : (r.lastRatio != null && r.lastRatio < 0.85 ? 'shorter than the rest.' : 'about the same length.'));
+      if (line) body.appendChild(h('p', { class: 'cap', text: line }));
+    }
+    return block('Rhythm', 'estimate', '', body);
+  }
+  /* c. Melody (estimate) */
+  function melodySvg(a, type, verdict) {
+    var W = 320, H = 132, pl = 24, pr = 8, pt = 8, pb = 8, pw = W - pl - pr, ph = H - pt - pb;
+    var f0 = a.pitch.f0, hop = a.pitch.hop, med = a.medianF0, i, first = -1, last = -1;
+    for (i = 0; i < f0.length; i++) if (f0[i]) { if (first < 0) first = i; last = i; }
+    var s = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Pitch line' });
+    if (first < 0) return s;
+    var maxAbs = 6;
+    for (i = first; i <= last; i++) if (f0[i]) maxAbs = Math.max(maxAbs, Math.abs(12 * Math.log2(f0[i] / med)));
+    var R = Math.min(14, Math.ceil(maxAbs / 2) * 2 + 2);
+    var X = function (k) { return pl + (k - first) / Math.max(1, last - first) * pw; };
+    var Y = function (st) { return pt + (R - clamp(st, -R, R)) / (2 * R) * ph; };
+    if (type) {
+      var top = [], bot = [], N = 24;
+      for (i = 0; i <= N; i++) { var b = DSP.expectedBand(type, i / N), x = (pl + i / N * pw).toFixed(1); top.push(x + ',' + Y(b[1]).toFixed(1)); bot.unshift(x + ',' + Y(b[0]).toFixed(1)); }
+      s.appendChild(sv('polygon', { points: top.concat(bot).join(' '), class: 'm-band' }));
+    }
+    [-R / 2, 0, R / 2].forEach(function (v) {
+      s.appendChild(sv('line', { x1: pl, y1: Y(v).toFixed(1), x2: W - pr, y2: Y(v).toFixed(1), class: v === 0 ? 'm-zero' : 'm-grid' }));
+      s.appendChild(svgText(pl - 4, (Y(v) + 3).toFixed(1), (v > 0 ? '+' : '') + Math.round(v), { 'text-anchor': 'end', 'font-size': 8.5 }));
+    });
+    var d = '', pen = false;
+    for (i = first; i <= last; i++) {
+      if (f0[i]) { d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(12 * Math.log2(f0[i] / med)).toFixed(1); pen = true; } else pen = false;
+    }
+    s.appendChild(sv('path', { d: d, class: 'm-line' }));
+    var e = a.ending;
+    if (e && e.from != null && e.dir !== 'unknown') {
+      var d2 = '', pen2 = false;
+      for (i = e.from; i <= e.to; i++) { if (f0[i]) { d2 += (pen2 ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(12 * Math.log2(f0[i] / med)).toFixed(1); pen2 = true; } else pen2 = false; }
+      var cls = verdict && verdict.ok === true ? 'ok' : (verdict && verdict.ok === false ? 'bad' : 'neu');
+      s.appendChild(sv('path', { d: d2, class: 'm-end ' + cls }));
+      s.appendChild(sv('circle', { cx: X(e.to).toFixed(1), cy: Y(12 * Math.log2(f0[e.to] / med)).toFixed(1), r: 4.5, class: 'm-dot ' + cls }));
+    }
+    return s;
+  }
+  function melodyBlock(res, withBand) {
+    if (res.audioState !== 'ok') return block('Melody', null, '', plain(audioMsg(res)));
+    var mv = res.melody, a = res.a;
+    var body = h('div', {}, [h('div', { class: 'svgbox' }, [melodySvg(a, withBand ? res.type : null, mv)])]);
+    var line = mv.line, cls = mv.ok === true ? 'ok' : (mv.ok === false ? 'bad' : '');
+    body.appendChild(h('p', { class: 'verdict ' + cls, text: line }));
+    body.appendChild(h('div', { class: 'legend' }, [
+      withBand ? h('span', {}, [h('i', { class: 'lg-band' }), 'expected shape']) : null,
+      h('span', {}, [h('i', { class: 'lg-line' }), 'your voice (semitones from your middle)'])
+    ]));
+    return block('Melody', 'estimate', '', body);
+  }
+  function recogWasLive(res) { var r = res && res.recog && res.recog.state; return !!r && r !== 'off' && r !== 'unsupported'; }
+  function audioMsg(res) {
+    var s = res.audioState;
+    if (s === 'dead') return recogWasLive(res) ? 'The microphone gave no sound to the analysis while word recognition was listening. This happens on some phones. Rhythm and melody are unavailable for this take.' : 'The microphone gave no sound at all. Check that it is not muted or switched off, then try again.';
+    if (s === 'short') return 'The take was too short to analyse.';
+    if (s === 'quiet') return 'The sound was too quiet to analyse. Move closer to the microphone.';
+    if (s === 'nospeech') return 'No voice was heard. Check that the microphone is not muted.';
+    return 'Audio analysis is unavailable for this take.';
+  }
+  /* d. One thing to fix */
+  var FIXICON = {
+    rhythm: '<svg viewBox="0 0 24 24" width="20" height="20"><circle cx="5" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="19" cy="12" r="1.6" fill="currentColor"/></svg>',
+    melody: '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 15c3-8 6-8 9-3s6 5 9-3"/></svg>',
+    good: '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>'
+  };
+  function fixBlock(c) {
+    if (!c || c.kind === 'none') return null;
+    var icon = h('div', { class: 'fixicon' });
+    if (c.kind === 'word') icon.textContent = c.sym || '?'; else icon.innerHTML = FIXICON[c.kind] || FIXICON.good;
+    var txt = h('div', {}, [
+      h('h3', { text: c.kind === 'word' ? c.title : (c.title || '') }),
+      h('p', { class: 'plain', text: c.tip })
+    ]);
+    if (c.practice && c.practice.length) {
+      var ws = h('div', { class: 'words' });
+      c.practice.forEach(function (w) { ws.appendChild(h('span', { class: 'wchip' }, [h('span', { text: w }), spkBtn(w, true, 'Listen to ' + w)])); });
+      txt.appendChild(ws);
+    }
+    return block(c.kind === 'good' ? 'Result' : 'One thing to fix', null, '', h('div', { class: 'fix' }, [icon, txt]));
+  }
+
+  /* ==========================================================================================
+     Vowel chart (F2 reversed on x, F1 reversed on y, log scales; zones are +-17 % ellipses)
+     ========================================================================================== */
+  function vowelChart(targetId, mates, scale, meas) {
+    var W = 340, H = 252, pl = 36, pr = 10, pt = 10, pb = 28, pw = W - pl - pr, ph = H - pt - pb;
+    var F2a = 2800, F2b = 520, F1a = 200, F1b = 900, sc = scale || 1;
+    var lx = Math.log(F2a) - Math.log(F2b), ly = Math.log(F1b) - Math.log(F1a);
+    var X = function (f2) { return pl + (Math.log(F2a) - Math.log(f2)) / lx * pw; };
+    var Y = function (f1) { return pt + (Math.log(f1) - Math.log(F1a)) / ly * ph; };
+    var rx = TXT.ZONE / lx * pw, ry = TXT.ZONE / ly * ph;
+    var s = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Vowel chart' });
+    s.appendChild(sv('rect', { x: pl, y: pt, width: pw, height: ph, class: 'c-frame' }));
+    [2500, 1500, 1000].forEach(function (v) { s.appendChild(sv('line', { x1: X(v).toFixed(1), y1: pt, x2: X(v).toFixed(1), y2: pt + ph, class: 'm-grid' })); s.appendChild(svgText(X(v).toFixed(1), pt + ph + 11, String(v), { 'text-anchor': 'middle', 'font-size': 8.5 })); });
+    [300, 500, 700].forEach(function (v) { s.appendChild(sv('line', { x1: pl, y1: Y(v).toFixed(1), x2: pl + pw, y2: Y(v).toFixed(1), class: 'm-grid' })); s.appendChild(svgText(pl - 4, (Y(v) + 3).toFixed(1), String(v), { 'text-anchor': 'end', 'font-size': 8.5 })); });
+    s.appendChild(svgText(pl + pw / 2, H - 3, 'F2 (Hz), high to low', { 'text-anchor': 'middle', 'font-size': 8.5 }));
+    s.appendChild(svgText(2, 8, 'F1', { 'font-size': 8.5 }));
+    var ids = Object.keys(TXT.VOWELS), order = ids.filter(function (id) { return id !== targetId && mates.indexOf(id) < 0; }).concat(mates.filter(function (id) { return id !== targetId; })).concat([targetId]);
+    var labels = [];
+    order.forEach(function (id) {
+      var v = TXT.VOWELS[id], cx = X(v.f2 * sc), cy = Y(v.f1 * sc);
+      var cls = id === targetId ? 'z-tgt' : (mates.indexOf(id) >= 0 ? 'z-mate' : 'z-oth');
+      s.appendChild(sv('ellipse', { cx: cx.toFixed(1), cy: cy.toFixed(1), rx: rx.toFixed(1), ry: ry.toFixed(1), class: cls }));
+      labels.push(svgText(cx.toFixed(1), (cy + 4.5).toFixed(1), v.sym, { 'text-anchor': 'middle', 'font-size': id === targetId ? 15 : 12.5, class: 'zl' + (id === targetId ? ' t' : '') }));
+    });
+    labels.forEach(function (t) { s.appendChild(t); });   /* labels last, so no zone covers a symbol */
+    if (meas) {
+      (meas.fm.frames || []).forEach(function (f) { s.appendChild(sv('circle', { cx: X(clamp(f.f2, F2b, F2a)).toFixed(1), cy: Y(clamp(f.f1, F1a, F1b)).toFixed(1), r: 2.4, class: 'm-frame' })); });
+      s.appendChild(sv('circle', { cx: X(clamp(meas.fm.f2, F2b, F2a)).toFixed(1), cy: Y(clamp(meas.fm.f1, F1a, F1b)).toFixed(1), r: 5.5, class: 'm-dot ' + (meas.v.inZone ? 'ok' : 'bad') }));
+    }
+    return s;
+  }
+
+  /* ==========================================================================================
+     Shared: word-check switch, text-safety for IPA
+     ========================================================================================== */
+  var wordSwitches = [];
+  function wordSwitch() {
+    var on = S.wordsOn && !!SR_CLASS;
+    var b = h('button', { type: 'button', class: 'sw', role: 'switch', 'aria-checked': on ? 'true' : 'false', 'aria-label': 'Word check', disabled: !SR_CLASS });
+    b.addEventListener('click', function () { S.wordsOn = b.getAttribute('aria-checked') !== 'true'; store.set('dl-words', S.wordsOn ? 'on' : 'off'); syncWordSwitches(); });
+    wordSwitches.push(b);
+    return h('div', { class: 'swrow' }, [b, h('span', { text: SR_CLASS ? 'Word check' : 'Word check (not in this browser)' })]);
+  }
+  function syncWordSwitches() { wordSwitches.forEach(function (b) { b.setAttribute('aria-checked', S.wordsOn && SR_CLASS ? 'true' : 'false'); }); }
+  function ipaSafe(t) {
+    t = String(t || '').trim();
+    if (!t || t.length > 160) return false;
+    if (/[0-9\/()\[\]→…]/.test(t)) return false;
+    return true;
+  }
+  function ipaFor(t) { return ipaSafe(t) ? TXT.ipaSlashed(t) : ''; }
+
+  /* ==========================================================================================
+     PHRASES
+     ========================================================================================== */
+  function currentTarget() { var c = S.custom.trim(); return c || BANK[S.idx]; }
+  function buildPhrases() {
+    var root = clear($('m-phrases'));
+    root.appendChild(h('div', { id: 'strip', class: 'strip', hidden: true }));
+    var card = h('div', { class: 'card' });
+    card.appendChild(h('div', { class: 'sentcount' }, [h('span', { class: 'lb', id: 'sentlb', text: 'Phrase' }), h('span', { class: 'cnt lb', id: 'sentCnt' })]));
+    card.appendChild(h('p', { class: 'sent-text', id: 'sentText', lang: 'fr' }));
+    card.appendChild(h('div', { class: 'ipa-row' }, [h('span', { class: 'ipa-line', id: 'sentIpa' }), spkBtn(currentTarget, false, 'Listen to the sentence')]));
+    card.appendChild(h('div', { class: 'navrow' }, [
+      h('button', { type: 'button', class: 'btn rbtn', 'aria-label': 'Previous sentence', html: ICON.prev, onclick: function () { stepSentence(-1); } }),
+      h('button', { type: 'button', class: 'btn rbtn', 'aria-label': 'Next sentence', html: ICON.next, onclick: function () { stepSentence(1); } })
+    ]));
+    card.appendChild(voiceHost());
+    card.appendChild(h('input', {
+      class: 'field', id: 'custom', type: 'text', placeholder: 'Type any French sentence', autocomplete: 'off', autocapitalize: 'sentences', spellcheck: 'false', lang: 'fr',
+      'aria-label': 'Type any French sentence', oninput: function (e) { S.custom = e.target.value; if (S.res.phrases) { S.res.phrases = null; S.take.phrases = null; clear($('phOut')); setDock(); } updateSentence(); }
+    }));
+    card.appendChild(wordSwitch());
+    root.appendChild(card);
+    root.appendChild(h('div', { id: 'phOut' }));
+    updateSentence(); renderStrip();
+  }
+  function updateSentence() {
+    var t = currentTarget(), custom = !!S.custom.trim();
+    $('sentText').textContent = t;
+    $('sentIpa').textContent = ipaFor(t);
+    $('sentCnt').textContent = custom ? 'Your sentence' : (S.idx + 1) + ' / ' + BANK.length;
+  }
+  function stepSentence(d) {
+    if (REC || S.busy) return;
+    S.idx = (S.idx + d + BANK.length) % BANK.length; S.custom = ''; store.set('dl-idx', String(S.idx));
+    var inp = $('custom'); if (inp) inp.value = '';
+    stopSpeech(); clearResult(); updateSentence();
+  }
+  function renderStrip() {
+    var box = clear($('strip')), top = TXT.topPatterns(ATT, 3);
+    if (!top.length) { box.hidden = true; return; }
+    box.hidden = false;
+    box.appendChild(h('p', { class: 'lb', text: 'Sons à travailler' }));
+    var chips = h('div', { class: 'chips' });
+    top.forEach(function (p) {
+      var P = TXT.PATTERNS[p.id];
+      chips.appendChild(h('button', { type: 'button', class: 'chip', 'aria-label': 'Practise ' + P.label + ', missed ' + p.count + ' times', onclick: function () { practicePattern(p.id); } }, [
+        P.sym ? h('span', { class: 'sym', text: P.sym }) : null, h('span', { text: P.label }), h('span', { class: 'n', text: String(p.count) }), h('span', { html: ICON.next, style: 'display:inline-flex' })
+      ]));
+    });
+    box.appendChild(chips);
+  }
+  function practicePattern(id) {
+    if (REC || S.busy) return;
+    var i = TXT.nextWithPattern(id, S.custom.trim() ? S.idx : S.idx);
+    if (i < 0) { toast('No sentence for this sound yet.'); return; }
+    S.idx = i; S.custom = ''; store.set('dl-idx', String(i));
+    var inp = $('custom'); if (inp) inp.value = '';
+    showMode('phrases'); stopSpeech(); clearResult(); updateSentence(); window.scrollTo(0, 0);
+  }
+
+  function hypothesesFrom(segs) {
+    var out = [], seen = {};
+    for (var k = 0; k < 3; k++) {
+      var texts = [], conf = [];
+      segs.forEach(function (s) { var a = s.alts[k] || s.alts[0]; texts.push(a.t); if (a.c > 0) conf.push(a.c); });
+      var t = texts.join(' ');
+      if (seen[t]) continue; seen[t] = true;
+      out.push({ text: t, confidence: conf.length ? Math.min.apply(null, conf) : null });
+    }
+    return out;
+  }
+  function audioFeatures(take, type, est) {
+    var a = DSP.analyzeTake(take.pcm, take.sr), rh = a.rhythm;
+    var out = { a: a, rhythm: { n: a.syll.n, rate: rh.rate, cv: rh.cv, lastLonger: rh.lastLonger, lastRatio: rh.lastRatio, verdict: est ? TXT.rhythmCountVerdict(a.syll.n, est) : 'ok' } };
+    out.melody = type ? TXT.melodyVerdict(type, a.ending) : { ok: null, dir: a.ending.dir, line: a.ending.dir === 'unknown' ? 'Not enough voiced sound to read the ending.' : 'Ends ' + a.ending.dir + '.' };
+    return out;
+  }
+  function analysePhrase(take, target) {
+    var res = { target: target, type: TXT.sentenceType(target), est: TXT.syllableEstimate(TXT.ipaPlain(target)), audioState: take.audioState, recog: take.recog };
+    if (take.audioState === 'ok') {
+      var f = audioFeatures(take, res.type, res.est);
+      res.a = f.a; res.rhythm = f.rhythm; res.melody = f.melody;
+    }
+    if (take.recog.state === 'ok') {
+      res.match = TXT.matchWords(target, hypothesesFrom(take.recog.segs));
+      var prev = null;
+      res.words = res.match.words.map(function (w) {
+        var o = { raw: w.raw, ok: w.ok, heard: w.heard, missing: w.missing, patterns: w.ok ? [] : TXT.patternsOfMissedWord(w, prev) };
+        prev = w; return o;
+      });
+    }
+    res.coach = TXT.coach({ mode: 'phrase', words: res.words || null, recog: take.recog.state, rhythm: res.rhythm || null, melody: res.melody || null });
+    return res;
+  }
+  function renderPhrase(res) {
+    var out = clear($('phOut'));
+    if (res.empty) { out.appendChild(emptyBlock(res)); return; }
+    if (res.recog.state !== 'off') out.appendChild(wordsBlock({ recog: res.recog, match: res.match }, 'phrases'));
+    if (res.audioState !== 'ok') {
+      var b = block('Rhythm and melody', null, '', h('div', {}, [plain(audioMsg(res))]));
+      if (res.audioState === 'dead' && S.wordsOn && recogWasLive(res)) b.lastChild.appendChild(h('p', {}, [h('button', { type: 'button', class: 'btn sm', text: 'Record audio only', onclick: function () { audioOnly(); } })]));
+      out.appendChild(b);
+    } else {
+      out.appendChild(rhythmBlock(res)); out.appendChild(melodyBlock(res, true));
+    }
+    var fb = fixBlock(res.coach); if (fb) out.appendChild(fb);
+  }
+  function audioOnly() {
+    S.wordsOn = false; store.set('dl-words', 'off'); syncWordSwitches(); clearResult(); startRec();
+  }
+  function emptyResult(take) {
+    var msg = take.audioState === 'short' ? 'The take was too short. Tap record, speak, then pause.' :
+      (take.audioState === 'dead' && take.recog.state !== 'ok' ? audioMsg({ audioState: 'dead', recog: take.recog }) : 'No voice was heard. Check that the microphone is not muted, then try again.');
+    return { empty: true, msg: msg, dead: take.audioState === 'dead' && S.wordsOn && recogWasLive({ recog: take.recog }) };
+  }
+  function emptyBlock(res) {
+    var body = h('div', {}, [plain(res.msg)]);
+    if (res.dead) body.appendChild(h('p', {}, [h('button', { type: 'button', class: 'btn sm', id: 'audioOnly', text: 'Record audio only', onclick: function () { audioOnly(); } })]));
+    return block('Result', null, '', body);
+  }
+  function onPhraseDone(take) {
+    S.take.phrases = take;
+    var usable = take.audioState === 'ok' || take.recog.state === 'ok';
+    if (!usable) { S.res.phrases = emptyResult(take); renderPhrase(S.res.phrases); return; }
+    var res = analysePhrase(take, take.target);
+    S.res.phrases = res; renderPhrase(res);
+    var pats = [];
+    (res.words || []).forEach(function (w) { w.patterns.forEach(function (p) { if (pats.indexOf(p) < 0) pats.push(p); }); });
+    saveAttempt({
+      t: new Date().toISOString(), mode: 'phrase', sentence: res.target,
+      words: (res.words || []).map(function (w) { return { word: w.raw, ok: w.ok, heard: w.heard.join(' ') }; }),
+      missed: (res.words || []).filter(function (w) { return !w.ok; }).map(function (w) { return w.raw; }),
+      patterns: pats,
+      rhythm: res.rhythm ? { syllables: res.rhythm.n, expected: [res.est.lo, res.est.hi], perSecond: res.rhythm.rate == null ? null : +res.rhythm.rate.toFixed(2), evenness: res.rhythm.cv == null ? null : +res.rhythm.cv.toFixed(3), lastLonger: res.rhythm.lastLonger, count: res.rhythm.verdict } : null,
+      melody: res.melody ? { sentenceType: res.type, ending: res.melody.dir, ok: res.melody.ok } : null,
+      wordsState: take.recog.state, audioState: take.audioState
+    });
+    renderStrip(); renderFoot();
+  }
+
+  /* ==========================================================================================
+     LIBRE
+     ========================================================================================== */
+  function buildLibre() {
+    var root = clear($('m-libre'));
+    var card = h('div', { class: 'card' }, [
+      h('p', { class: 'lb', text: 'Libre' }),
+      h('p', { class: 'sent-text', text: 'Say anything in French.' }),
+      wordSwitch()
+    ]);
+    root.appendChild(card);
+    root.appendChild(h('div', { id: 'liOut' }));
+  }
+  function analyseLibre(take) {
+    var res = { type: null, est: null, audioState: take.audioState, recog: take.recog };
+    if (take.audioState === 'ok') { var f = audioFeatures(take, null, null); res.a = f.a; res.rhythm = f.rhythm; res.melody = f.melody; }
+    var words = null;
+    if (take.recog.state === 'ok') { res.segs = TXT.libreAnalysis(take.recog.segs); words = TXT.unclearForCoach(res.segs); res.unclear = words; }
+    res.coach = TXT.coach({ mode: 'libre', words: words, recog: take.recog.state, rhythm: res.rhythm || null, melody: null });
+    return res;
+  }
+  function transcriptBlock(res) {
+    if (res.recog.state !== 'ok') return block('Heard', null, '', plain(recogMessage(res.recog.state, 'libre')));
+    var body = h('div', {}), minConf = 1, any = false;
+    res.segs.forEach(function (sg) {
+      var line = h('p', { class: 'plain seg-line', lang: 'fr' });
+      sg.words.forEach(function (w, i) { line.appendChild(h('span', { class: w.unclear ? 'uncl' : '', text: w.raw })); if (i < sg.words.length - 1) line.appendChild(document.createTextNode(' ')); });
+      body.appendChild(line);
+      if (sg.conf != null) { any = true; minConf = Math.min(minConf, sg.conf); }
+      var alts = [];
+      sg.words.forEach(function (w) { if (w.unclear && w.alt.length) alts.push(w.raw + ' or ' + w.alt.join(' or ')); });
+      if (alts.length) body.appendChild(h('p', { class: 'altline' }, ['Unsure: ', h('b', { text: alts.join(' · ') })]));
+    });
+    var tag = null, cls = '';
+    if (any) { if (minConf >= 0.8) { tag = 'clear'; cls = 'ok'; } else { tag = 'unsure'; cls = 'warn'; } }
+    return block('Heard', tag, cls, body);
+  }
+  function renderLibre(res) {
+    var out = clear($('liOut'));
+    if (res.empty) { out.appendChild(emptyBlock(res)); return; }
+    if (res.recog.state !== 'off') out.appendChild(transcriptBlock(res));
+    if (res.audioState !== 'ok') {
+      var b = block('Rhythm and melody', null, '', h('div', {}, [plain(audioMsg(res))]));
+      if (res.audioState === 'dead' && S.wordsOn && recogWasLive(res)) b.lastChild.appendChild(h('p', {}, [h('button', { type: 'button', class: 'btn sm', text: 'Record audio only', onclick: function () { audioOnly(); } })]));
+      out.appendChild(b);
+    } else { out.appendChild(rhythmBlock(res)); out.appendChild(melodyBlock(res, false)); }
+    var fb = fixBlock(res.coach); if (fb) out.appendChild(fb);
+  }
+  function onLibreDone(take) {
+    S.take.libre = take;
+    if (!(take.audioState === 'ok' || take.recog.state === 'ok')) { S.res.libre = emptyResult(take); renderLibre(S.res.libre); return; }
+    var res = analyseLibre(take); S.res.libre = res; renderLibre(res);
+  }
+
+  /* ==========================================================================================
+     SONS
+     ========================================================================================== */
+  function sonCard() { return TXT.SONS.filter(function (x) { return x.id === S.son.card; })[0]; }
+  function drillList() {
+    return S.son.card === 'r' ? TXT.DRILLS.r : TXT.DRILLS.nas.filter(function (d) { return d.pat === S.son.grp; });
+  }
+  function currentDrill() { var l = drillList(); return l[((S.son.di % l.length) + l.length) % l.length]; }
+  function buildSons() {
+    var root = clear($('m-sons'));
+    var tiles = h('div', { class: 'tiles', role: 'group', 'aria-label': 'Sounds' });
+    TXT.SONS.forEach(function (c, i) {
+      tiles.appendChild(h('button', { type: 'button', class: 'tile' + (i === TXT.SONS.length - 1 && TXT.SONS.length % 2 ? ' wide' : ''), 'data-id': c.id, 'aria-pressed': S.son.card === c.id ? 'true' : 'false', onclick: function () { selectCard(c.id); } },
+        [h('b', { text: c.glyph }), h('span', { text: c.ipa })]));
+    });
+    root.appendChild(tiles);
+    root.appendChild(h('div', { id: 'lab' }));
+    root.appendChild(h('div', { id: 'soChart' }));
+    root.appendChild(h('div', { id: 'soOut' }));
+    renderLab();
+  }
+  function selectCard(id) {
+    if (REC || S.busy) return;
+    S.son.card = id; var c = sonCard();
+    if (c.kind === 'vowel') S.son.target = c.vowels[0]; else { S.son.grp = 'nasal-on'; S.son.di = 0; }
+    S.res.sons = null; S.take.sons = null; stopPlayback(); stopSpeech();
+    Array.prototype.forEach.call(document.querySelectorAll('.tile'), function (t) { t.setAttribute('aria-pressed', t.dataset.id === id ? 'true' : 'false'); });
+    renderLab(); setDock();
+  }
+  function renderLab() {
+    var lab = clear($('lab')), c = sonCard();
+    clear($('soOut')); clear($('soChart'));
+    var card = h('div', { class: 'card' });
+    lab.appendChild(card);
+    if (c.kind === 'vowel') {
+      if (c.vowels.length > 1) {
+        var seg = h('div', { class: 'seg sm', role: 'group', 'aria-label': 'Target vowel' });
+        c.vowels.forEach(function (v) {
+          var V = TXT.VOWELS[v];
+          seg.appendChild(h('button', { type: 'button', 'aria-pressed': S.son.target === v ? 'true' : 'false', text: V.spell + '  /' + V.sym + '/', onclick: function () { S.son.target = v; S.res.sons = null; S.take.sons = null; renderLab(); setDock(); } }));
+        });
+        card.appendChild(seg);
+      }
+      var V0 = TXT.VOWELS[S.son.target];
+      card.appendChild(h('div', { class: 'modelrow' }, [h('span', { class: 'w', text: V0.word, lang: 'fr' }), h('span', { class: 'ipa-line', text: TXT.ipaSlashed(V0.word) }), spkBtn(V0.word, false, 'Listen to ' + V0.word)]));
+      card.appendChild(voiceHost());
+      var sw = h('button', { type: 'button', class: 'sw', role: 'switch', 'aria-checked': S.higher ? 'true' : 'false', 'aria-label': 'My voice is higher' });
+      sw.addEventListener('click', function () { S.higher = sw.getAttribute('aria-checked') !== 'true'; sw.setAttribute('aria-checked', S.higher ? 'true' : 'false'); store.set('dl-higher', S.higher ? '1' : '0'); drawChart(); if (S.res.sons && S.res.sons.v) rescoreVowel(); });
+      card.appendChild(h('div', { class: 'swrow' }, [sw, h('span', { text: 'My voice is higher' })]));
+      card.appendChild(h('p', { class: 'cap', text: 'Hold the sound for 1.5 s. Zones are approximate.' }));
+      drawChart();
+    } else {
+      var list = drillList();
+      if (c.id === 'nas') {
+        var g = h('div', { class: 'seg sm', role: 'group', 'aria-label': 'Nasal vowel' });
+        [['nasal-on', 'on  /ɔ̃/'], ['nasal-an', 'an  /ɑ̃/'], ['nasal-in', 'in  /ɛ̃/']].forEach(function (x) {
+          g.appendChild(h('button', { type: 'button', 'aria-pressed': S.son.grp === x[0] ? 'true' : 'false', text: x[1], onclick: function () { S.son.grp = x[0]; S.son.di = 0; S.res.sons = null; S.take.sons = null; renderLab(); setDock(); } }));
+        });
+        card.appendChild(g);
+      }
+      var d = currentDrill();
+      card.appendChild(h('p', { class: 'lb', style: 'margin-top:12px', text: 'Say' }));
+      card.appendChild(h('div', { class: 'modelrow', style: 'margin-top:4px' }, [h('span', { class: 'w', style: 'font-size:40px', text: d.w, lang: 'fr' }), h('span', { class: 'ipa-line', text: TXT.ipaSlashed(d.w) }), spkBtn(d.w, false, 'Listen to ' + d.w)]));
+      card.appendChild(h('div', { class: 'pair' }, [h('span', { text: 'not' }), h('b', { text: d.twin, lang: 'fr' }), h('span', { class: 'ipa-line', style: 'flex:none', text: TXT.ipaSlashed(d.twin) }), spkBtn(d.twin, true, 'Listen to ' + d.twin)]));
+      card.appendChild(h('div', { class: 'navrow' }, [
+        h('button', { type: 'button', class: 'btn rbtn', 'aria-label': 'Previous word', html: ICON.prev, onclick: function () { S.son.di--; S.res.sons = null; S.take.sons = null; renderLab(); setDock(); } }),
+        h('button', { type: 'button', class: 'btn rbtn', 'aria-label': 'Next word', html: ICON.next, onclick: function () { S.son.di++; S.res.sons = null; S.take.sons = null; renderLab(); setDock(); } }),
+        h('span', { class: 'cnt', text: (((S.son.di % list.length) + list.length) % list.length + 1) + ' / ' + list.length })
+      ]));
+      card.appendChild(voiceHost());
+      if (!SR_CLASS) card.appendChild(h('p', { class: 'plain', text: recogMessage('unsupported', 'sons') }));
+    }
+  }
+  function drawChart(meas) {
+    var box = clear($('soChart')), c = sonCard();
+    if (c.kind !== 'vowel') return;
+    box.appendChild(h('div', { class: 'blk' }, [h('div', { class: 'svgbox' }, [vowelChart(S.son.target, c.vowels, S.higher ? 1.15 : 1, meas || null)])]));
+  }
+  function rescoreVowel() {
+    var r = S.res.sons; if (!r || !r.fm) return;
+    r.v = TXT.vowelVerdict(r.target, r.fm.f1, r.fm.f2, S.higher ? 1.15 : 1);
+    renderVowelResult(r);
+  }
+  function renderVowelResult(r) {
+    clear($('soOut'));
+    drawChart(r.fm ? r : null);
+    var out = $('soOut');
+    if (r.err) { out.appendChild(block('Vowel', null, '', plain(r.err))); return; }
+    var body = h('div', {}, [h('p', { class: 'verdict ' + (r.v.inZone && r.v.nearest === r.target ? 'ok' : 'bad'), text: r.v.line })]);
+    if (r.v.tip) body.appendChild(plain(r.v.tip));
+    body.appendChild(h('p', { class: 'nums', text: 'F1 ' + Math.round(r.fm.f1) + ' Hz · F2 ' + Math.round(r.fm.f2) + ' Hz · pitch ' + Math.round(r.f0) + ' Hz' }));
+    if (r.f0 > 180) body.appendChild(h('p', { class: 'cap', text: 'High pitch: the F1 reading is rough.' }));
+    out.appendChild(block('Vowel', 'estimate', '', body));
+  }
+  function onVowelDone(take) {
+    S.take.sons = take;
+    var target = take.target, res = { target: target };
+    if (take.audioState !== 'ok') { res.err = take.audioState === 'nospeech' ? 'No voice was heard. Check that the microphone is not muted.' : audioMsg({ audioState: take.audioState }); }
+    else {
+      var a = DSP.analyzeTake(take.pcm, take.sr), st = DSP.steadyRun(a.pitch.f0, a.pitch.hop, 0.3);
+      var fm = st ? DSP.formants(a.x, a.sr, st.a, st.b) : null;
+      if (!st || !fm) res.err = 'No steady vowel found. Hold one sound for about 1.5 s, without a break.';
+      else { res.fm = fm; res.f0 = a.medianF0; res.v = TXT.vowelVerdict(target, fm.f1, fm.f2, S.higher ? 1.15 : 1); }
+    }
+    S.res.sons = res; renderVowelResult(res);
+  }
+  function onDrillDone(take) {
+    S.take.sons = take;
+    var d = currentDrill(), out = clear($('soOut'));
+    if (take.recog.state !== 'ok') {
+      var msg = take.audioState === 'nospeech' || take.audioState === 'short' ? 'No voice was heard. Check that the microphone is not muted.' : recogMessage(take.recog.state, 'sons');
+      S.res.sons = { empty: true, msg: msg }; out.appendChild(block('Heard', null, '', plain(msg))); return;
+    }
+    var alts = []; take.recog.segs.forEach(function (s) { s.alts.forEach(function (a) { alts.push(a); }); });
+    var r = TXT.drillResult(d, alts), P = TXT.PATTERNS[d.pat];
+    S.res.sons = { drill: d, r: r };
+    var body = h('div', {});
+    body.appendChild(h('p', { class: 'sent-text', style: 'margin:0 0 6px', text: r.heard, lang: 'fr' }));
+    if (r.ok) body.appendChild(h('p', { class: 'verdict ok', text: 'Heard ' + d.w + '. Good.' }));
+    else {
+      body.appendChild(h('p', { class: 'verdict bad', text: r.kind === 'twin' ? 'That sounded like ' + d.twin + ', not ' + d.w + '.' : 'Not ' + d.w + '. Try again, clearly and alone.' }));
+      body.appendChild(plain(P.tip));
+      var ws = h('div', { class: 'words', style: 'margin-top:8px' });
+      P.words.forEach(function (w) { ws.appendChild(h('span', { class: 'wchip' }, [h('span', { text: w }), spkBtn(w, true, 'Listen to ' + w)])); });
+      body.appendChild(ws);
+    }
+    out.appendChild(block('Heard', r.ok ? 'ok' : null, 'ok', body));
+    saveAttempt({ t: new Date().toISOString(), mode: 'drill', sentence: d.w, words: [{ word: d.w, ok: r.ok, heard: r.heard }], missed: r.ok ? [] : [d.w], patterns: r.ok ? [] : [d.pat], rhythm: null, melody: null, wordsState: 'ok', audioState: take.audioState });
+    renderStrip(); renderFoot();
+  }
+
+  /* ==========================================================================================
+     Footer: honesty line, export of attempts
+     ========================================================================================== */
+  function renderFoot() {
+    var f = clear($('foot'));
+    f.appendChild(h('p', { text: 'Recording and analysis happen on this device. Word recognition is done by the browser\'s own service (Apple or Google), which may receive the audio.' }));
+    var row = h('div', { class: 'row' }, [
+      h('button', { type: 'button', class: 'btn sm', id: 'exportBtn', text: 'Export attempts (' + ATT.length + ')', disabled: !ATT.length, onclick: exportAttempts })
+    ]);
+    f.appendChild(row);
+    f.appendChild(h('div', { id: 'exportBox' }));
+  }
+  function exportAttempts() {
+    var json = JSON.stringify(ATT, null, 1), box = clear($('exportBox'));
+    try {
+      var blob = new Blob([json], { type: 'application/json' }), url = URL.createObjectURL(blob);
+      var a = h('a', { href: url, download: 'dis-la-attempts.json' });
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { try { URL.revokeObjectURL(url); } catch (e) { } }, 4000);
+      toast('Attempts exported.');
+    } catch (e) {
+      box.appendChild(h('p', { class: 'cap', text: 'The download did not start. Copy this text instead:' }));
+      var ta = h('textarea', { readonly: true, 'aria-label': 'Attempts as JSON' }); ta.value = json; box.appendChild(ta);
+      try { ta.focus(); ta.select(); } catch (e2) { }
+    }
+  }
+
+  /* ==========================================================================================
+     Modes and start-up
+     ========================================================================================== */
+  var MODES = [['phrases', 'Phrases'], ['sons', 'Sons'], ['libre', 'Libre']];
+  function buildModes() {
+    var seg = clear($('modes'));
+    MODES.forEach(function (m) {
+      seg.appendChild(h('button', { type: 'button', role: 'tab', id: 'tab-' + m[0], 'aria-selected': S.mode === m[0] ? 'true' : 'false', 'aria-controls': 'm-' + m[0], text: m[1], onclick: function () { showMode(m[0]); } }));
+    });
+  }
+  function showMode(m) {
+    if ((REC || S.busy) && m !== S.mode) return;
+    S.mode = m; store.set('dl-mode', m);
+    MODES.forEach(function (x) {
+      var on = x[0] === m;
+      $('m-' + x[0]).hidden = !on;
+      $('tab-' + x[0]).setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    stopSpeech(); stopPlayback(); setDock();
+  }
+  function pruneHosts() {
+    voiceHosts = voiceHosts.filter(function (e) { return document.body.contains(e); });
+    wordSwitches = wordSwitches.filter(function (e) { return document.body.contains(e); });
+  }
+
+  function init() {
+    buildTheme(); buildModes(); buildPhrases(); buildSons(); buildLibre(); renderFoot();
+    pickVoice();
+    if (synth) { try { synth.onvoiceschanged = pickVoice; } catch (e) { } }
+    showMicNote(micProblem());
+    showMode(S.mode);
+    window.addEventListener('resize', function () { setDock(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden) { if (REC) stopNow(); stopSpeech(); stopPlayback(); } });
+    setInterval(pruneHosts, 15000);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+})();
+
+</script>
+</body>
+</html>
