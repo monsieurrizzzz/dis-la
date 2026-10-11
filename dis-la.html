@@ -1,10 +1,13 @@
-<!-- OWNER: claude · LAST: claude 2026-10-11 · Dis-la pronunciation trainer, standalone page, mic needs Chrome/Safari at its own address -->
+<!-- OWNER: claude · LAST: claude 2026-10-11 · Dis-la v2, sentence from link -->
 <!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="light dark">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="dis-la-version" content="2">
 <meta name="description" content="Dis-la: French pronunciation and accent trainer. Everything is computed on this device.">
 <title>Dis-la</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23a3453a'/%3E%3Crect x='12' y='6' width='8' height='14' rx='4' fill='none' stroke='%23f7f5f1' stroke-width='2.4'/%3E%3Cpath d='M8 15a8 8 0 0 0 16 0M16 23v4' fill='none' stroke='%23f7f5f1' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E">
@@ -1544,6 +1547,43 @@ function frPron(text){
     return -1;
   }
 
+  /* ---------------------------------------------------------------------------------------
+     3e. Links: dis-la.html#s=<sentence> opens Phrases with that sentence, #m=sons|libre opens a mode.
+     Anyone can craft a link, so the sentence is cleaned here and only ever used as text.
+     --------------------------------------------------------------------------------------- */
+  var MAXLEN = 200;
+  function cleanSentence(raw) {
+    var t = String(raw == null ? "" : raw);
+    t = t.replace(/[\t\n\r\f\v\u2028\u2029]+/g, " ")
+      .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u2064\u2066-\u2069\uFEFF]/g, "")
+      .replace(/\s+/g, " ").trim();
+    if (t.length > MAXLEN) {
+      t = t.slice(0, MAXLEN);
+      if (/[\uD800-\uDBFF]$/.test(t)) t = t.slice(0, -1);
+      t = t.trim();
+    }
+    return t;
+  }
+  function parseHash(hash) {
+    var out = { s: null, m: null }, h = String(hash || "");
+    if (h.charAt(0) === "#") h = h.slice(1);
+    h.split("&").forEach(function (part) {
+      var i = part.indexOf("=");
+      if (i < 1) return;
+      var k = part.slice(0, i), v;
+      try { v = decodeURIComponent(part.slice(i + 1)); } catch (e) { return; }
+      if (k === "s") { var t = cleanSentence(v); if (t) out.s = t; }
+      else if (k === "m") { v = v.trim().toLowerCase(); if (v === "phrases" || v === "sons" || v === "libre") out.m = v; }
+    });
+    return out;
+  }
+  function bankKey(t) { return String(t).replace(/[\u2018\u2019]/g, "'").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase().replace(/[.!\u2026\s]+$/, ""); }
+  function bankIndexOf(text) {
+    var k = bankKey(text);
+    for (var i = 0; i < BANK.length; i++) if (bankKey(BANK[i]) === k) return i;
+    return -1;
+  }
+
   return {
     ipaPlain: ipaPlain, ipaSlashed: ipaSlashed, frPron: frPron,
     normSubs: normSubs, heardTokens: heardTokens, prepareTarget: prepareTarget, alignWords: alignWords, matchWords: matchWords, lev: lev,
@@ -1552,7 +1592,8 @@ function frPron(text){
     melodyVerdict: melodyVerdict, coach: coach, topPatterns: topPatterns, RHYTHM_TIPS: RHYTHM_TIPS, MELODY_TIPS: MELODY_TIPS,
     VOWELS: VOWELS, ZONE: ZONE, classifyVowel: classifyVowel, vowelVerdict: vowelVerdict, vowelAdvice: vowelAdvice,
     SONS: SONS, DRILLS: DRILLS, drillResult: drillResult, libreAnalysis: libreAnalysis, unclearForCoach: unclearForCoach,
-    BANK: BANK, bankPatterns: bankPatterns, nextWithPattern: nextWithPattern
+    BANK: BANK, bankPatterns: bankPatterns, nextWithPattern: nextWithPattern,
+    MAXLEN: MAXLEN, cleanSentence: cleanSentence, parseHash: parseHash, bankIndexOf: bankIndexOf
   };
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
@@ -2219,11 +2260,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
     return h('div', { class: 'swrow' }, [b, h('span', { text: SR_CLASS ? 'Word check' : 'Word check (not in this browser)' })]);
   }
   function syncWordSwitches() { wordSwitches.forEach(function (b) { b.setAttribute('aria-checked', S.wordsOn && SR_CLASS ? 'true' : 'false'); }); }
-  function ipaSafe(t) {
+  function ipaSafe(t) {   /* IPA only for plain text: letters, spaces, apostrophes, hyphens, ordinary punctuation */
     t = String(t || '').trim();
-    if (!t || t.length > 160) return false;
-    if (/[0-9\/()\[\]→…]/.test(t)) return false;
-    return true;
+    if (!t || t.length > TXT.MAXLEN) return false;
+    try { return /^[\p{L}\p{M}\s'\u2019\-.,;:!?\u00AB\u00BB"\u201C\u201D]+$/u.test(t); }
+    catch (e) { return !/[0-9\/()\[\]<>=&{}\u2192\u2026]/.test(t); }
   }
   function ipaFor(t) { return ipaSafe(t) ? TXT.ipaSlashed(t) : ''; }
 
@@ -2244,13 +2285,19 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
     ]));
     card.appendChild(voiceHost());
     card.appendChild(h('input', {
-      class: 'field', id: 'custom', type: 'text', placeholder: 'Type any French sentence', autocomplete: 'off', autocapitalize: 'sentences', spellcheck: 'false', lang: 'fr',
-      'aria-label': 'Type any French sentence', oninput: function (e) { S.custom = e.target.value; if (S.res.phrases) { S.res.phrases = null; S.take.phrases = null; clear($('phOut')); setDock(); } updateSentence(); }
+      class: 'field', id: 'custom', type: 'text', placeholder: 'Type any French sentence', autocomplete: 'off', autocapitalize: 'sentences', spellcheck: 'false', lang: 'fr', maxlength: String(TXT.MAXLEN),
+      'aria-label': 'Type any French sentence', oninput: function (e) { setCustom(e.target.value); }
     }));
     card.appendChild(wordSwitch());
     root.appendChild(card);
     root.appendChild(h('div', { id: 'phOut' }));
     updateSentence(); renderStrip();
+  }
+  /* one path for the text box and for links: set the custom sentence, drop a stale result, redraw the target */
+  function setCustom(v) {
+    S.custom = v;
+    if (S.res.phrases) { S.res.phrases = null; S.take.phrases = null; clear($('phOut')); setDock(); }
+    updateSentence();
   }
   function updateSentence() {
     var t = currentTarget(), custom = !!S.custom.trim();
@@ -2604,12 +2651,35 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
     wordSwitches = wordSwitches.filter(function (e) { return document.body.contains(e); });
   }
 
+  /* Links from other pages: #s=<sentence> opens Phrases on that sentence, #m=sons or #m=libre opens a mode.
+     Nothing starts by itself (no microphone, no sound). The hash is never rewritten by this page. A link
+     that arrives during a take waits until the take is done. */
+  var hashTimer = null;
+  function applyHash(tries) {
+    var q = TXT.parseHash(location.hash);
+    if (q.s == null && !q.m) return;
+    if (REC || S.busy) {
+      clearTimeout(hashTimer);
+      if ((tries || 0) < 80) hashTimer = setTimeout(function () { applyHash((tries || 0) + 1); }, 500);
+      return;
+    }
+    if (q.s != null) {
+      showMode('phrases');
+      var i = TXT.bankIndexOf(q.s), inp = $('custom');
+      if (i >= 0) { S.idx = i; store.set('dl-idx', String(i)); if (inp) inp.value = ''; setCustom(''); }
+      else { if (inp) inp.value = q.s; setCustom(q.s); }
+      stopSpeech(); clearResult(); updateSentence(); window.scrollTo(0, 0);
+    } else showMode(q.m);
+  }
+
   function init() {
     buildTheme(); buildModes(); buildPhrases(); buildSons(); buildLibre(); renderFoot();
     pickVoice();
     if (synth) { try { synth.onvoiceschanged = pickVoice; } catch (e) { } }
     showMicNote(micProblem());
     showMode(S.mode);
+    applyHash(0);
+    window.addEventListener('hashchange', function () { applyHash(0); });
     window.addEventListener('resize', function () { setDock(); });
     document.addEventListener('visibilitychange', function () { if (document.hidden) { if (REC) stopNow(); stopSpeech(); stopPlayback(); } });
     setInterval(pruneHosts, 15000);
