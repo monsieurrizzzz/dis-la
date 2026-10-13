@@ -1,4 +1,4 @@
-<!-- OWNER: claude · LAST: claude 2026-10-12 · Dis-la v3, Parler: back link, settings sheet, live vowel map, Suivi, session link -->
+<!-- OWNER: claude · LAST: claude 2026-10-13 · Dis-la v3.1, compact screens, session summary returns to Français Quotidien -->
 <!doctype html>
 <html lang="en">
 <head>
@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="light dark">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta name="dis-la-version" content="3">
+<meta name="dis-la-version" content="3.1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Dis-la">
@@ -306,6 +306,49 @@ html.sheet-open{overflow:hidden}
 .srow .theme{display:inline-flex}
 .card>.lb+.plain,.card>.lb+.chips,.card>.lb+.svgbox{margin-top:8px}
 .dockside .act small{color:var(--ink2)}
+
+/* ===== version 3.1: more compact, less scrolling ===== */
+.wrap{padding-top:max(8px,env(safe-area-inset-top))}
+.top{margin:0 0 8px;gap:10px}
+h1{font-size:28px}
+.rbtn{width:40px;height:40px}
+.rbtn svg{width:19px;height:19px}
+.seg button{min-height:38px}
+.seg.sm button{min-height:34px}
+.card{padding:10px 12px;margin:0 0 10px}
+.sentcount{margin-bottom:4px}
+.sent-text{font-size:25px;line-height:1.18;margin:0 0 6px}
+.sentcard .ipa-line{margin:0 0 8px}
+.ipa-row{margin:0 0 8px}
+.customrow{margin-top:8px}
+.strip{margin:0 0 10px}
+.strip .chips{margin-top:6px;gap:6px}
+.chip{min-height:36px}
+.blk{padding:9px 12px 10px;margin:0 0 9px}
+.blk-h{margin:0 0 6px}
+.wp{font-size:18px;padding:2px 9px 3px}
+.stats{gap:6px;margin:0 0 6px}
+.stat{padding:5px 7px 4px}
+.stat b{font-size:22px}
+.fix{gap:10px}
+.fixicon{width:30px;height:30px}
+.fix h3{font-size:19px;margin:0 0 2px}
+.fix p{margin:0 0 6px}
+.verdict{margin:6px 0 0;font-size:14.5px}
+.legend{margin-top:4px;gap:4px 12px}
+.cap{margin:4px 0 0}
+.tiles{gap:8px;margin:0 0 10px}
+.tile{min-height:56px;padding:6px 10px}
+.soundrow{margin-bottom:8px}
+.note{margin:0 0 8px;padding:7px 10px}
+.rchip{min-height:44px}
+.chips3{margin:0 0 8px}
+/* the end-of-session line: saving to Français Quotidien */
+#sumSend{display:flex;flex-direction:column;align-items:flex-start;gap:8px;margin:12px 0 0}
+#sumSend p{margin:0}
+#sumCode{width:100%;font:12px/1.35 var(--mono);color:var(--ink);background:var(--card);border:1px solid var(--hair);border-radius:8px;padding:8px;word-break:break-all;resize:none}
+.chartcard{padding:8px 8px 6px}
+.chartcard .cap{margin:2px 4px 0}
 
 </style>
 </head>
@@ -2299,12 +2342,12 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
     return s;
   }
   function rhythmBars(a) {
-    var sy = a.syll, W = 320, H = 84, pad = 8, base = 74, n = sy.n;
+    var sy = a.syll, W = 320, H = 68, pad = 8, base = 60, n = sy.n;
     var s = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': n + ' syllable peaks' });
     var t0 = Math.max(0, sy.region[0] - 0.08), t1 = Math.max(t0 + 0.5, sy.region[1] + 0.08), sx = (W - 2 * pad) / (t1 - t0);
     s.appendChild(sv('line', { x1: pad, y1: base + 0.5, x2: W - pad, y2: base + 0.5, class: 'axis' }));
     for (var i = 0; i < n; i++) {
-      var cx = pad + (sy.times[i] - t0) * sx, bw = clamp(sy.widths[i] * sx * 0.75, 5, 36), hgt = 66 * clamp(1 + sy.dB[i] / 26, 0.18, 1);
+      var cx = pad + (sy.times[i] - t0) * sx, bw = clamp(sy.widths[i] * sx * 0.75, 5, 36), hgt = 52 * clamp(1 + sy.dB[i] / 26, 0.18, 1);
       var last = i === n - 1;
       s.appendChild(sv('rect', { x: (cx - bw / 2).toFixed(1), y: (base - hgt).toFixed(1), width: bw.toFixed(1), height: hgt.toFixed(1), rx: 2, class: 'bar' + (last ? ' last' : '') }));
       if (last) s.appendChild(svgText((cx).toFixed(1), (base - hgt - 4).toFixed(1), 'last', { 'text-anchor': 'middle', 'font-size': 9 }));
@@ -2333,7 +2376,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
   }
   /* c. Melody (estimate) */
   function melodySvg(a, type, verdict) {
-    var W = 320, H = 132, pl = 24, pr = 8, pt = 8, pb = 8, pw = W - pl - pr, ph = H - pt - pb;
+    var W = 320, H = 104, pl = 24, pr = 8, pt = 8, pb = 8, pw = W - pl - pr, ph = H - pt - pb;
     var f0 = a.pitch.f0, hop = a.pitch.hop, med = a.medianF0, i, first = -1, last = -1;
     for (i = 0; i < f0.length; i++) if (f0[i]) { if (first < 0) first = i; last = i; }
     var s = sv('svg', { viewBox: '0 0 ' + W + ' ' + H, role: 'img', 'aria-label': 'Pitch line' });
@@ -2375,7 +2418,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
     body.appendChild(h('p', { class: 'verdict ' + cls, text: line }));
     body.appendChild(h('div', { class: 'legend' }, [
       withBand ? h('span', {}, [h('i', { class: 'lg-band' }), 'expected shape']) : null,
-      h('span', {}, [h('i', { class: 'lg-line' }), 'your voice (semitones from your middle)'])
+      h('span', {}, [h('i', { class: 'lg-line' }), 'your voice (± semitones)'])
     ]));
     return block('Melody', 'estimate', '', body);
   }
@@ -2418,7 +2461,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
      ========================================================================================== */
   function vowelChart(o) {
     var targetId = o.target, mates = o.mates || [], sc = o.scale || 1, meas = o.meas || null, hist = o.hist || [];
-    var W = 340, H = 268, pl = 36, pr = 10, pt = 10, pb = 28, pw = W - pl - pr, ph = H - pt - pb;
+    var W = 340, H = 226, pl = 36, pr = 10, pt = 10, pb = 28, pw = W - pl - pr, ph = H - pt - pb;
     var F2a = 2800, F2b = 520, F1a = 200, F1b = 900;
     var lx = Math.log(F2a) - Math.log(F2b), ly = Math.log(F1b) - Math.log(F1a);
     var X = function (f2) { return pl + (Math.log(F2a) - Math.log(clamp(f2, F2b, F2a))) / lx * pw; };
@@ -2574,6 +2617,65 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
     showMode('phrases'); stopSpeech(); clearResult(); updateSentence(); renderSummary(); window.scrollTo(0, 0);
   }
 
+
+  /* ---------- the end of a session goes back to Français Quotidien as a code to paste ----------
+     Claude's page around the app drops everything after the link (# and ?), so a link cannot carry the session. One tap copies a code
+     (FQS1:<base64url of {v:1,s:[packet,...]}>: this session and up to 2 earlier ones; the app keeps each id once) and the app has a paste box. */
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function hash36(str) { var x = 5381; for (var i = 0; i < str.length; i++) x = ((x << 5) + x + str.charCodeAt(i)) | 0; return (x >>> 0).toString(36); }
+  function b64url(str) { return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function returnPacket() {
+    var q = S.q; if (!q) return null;
+    var ks = Object.keys(q.done).map(Number).sort(function (a, b) { return a - b; });
+    if (!ks.length) return null;
+    var now = new Date(), d = now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate());
+    var items = ks.map(function (k) {
+      var r = q.done[k];
+      return { s: r.sentence, ok: r.ok ? 1 : 0, m: (r.missed || []).slice(0, 8), p: (r.patterns || []).slice(0, 4), nw: r.nWords, nm: r.nMissed };
+    });
+    return { v: 1, id: d + '-' + hash36(q.list.join('|') + '#' + (q.t0 || 0)), d: d, t: now.toISOString(), n: ks.length, of: q.list.length, items: items };
+  }
+  function returnCode() {
+    var pk = returnPacket(); if (!pk) return '';
+    var js = JSON.stringify(pk);
+    while (js.length > 5200 && pk.items.length) { pk.items.forEach(function (it) { it.m = it.m.slice(0, 2); it.p = it.p.slice(0, 1); }); js = JSON.stringify(pk); if (js.length > 5200) pk.items.pop(); }
+    var list = [];
+    try { list = JSON.parse(store.get('dl-pending', '[]')) || []; } catch (e) { list = []; }
+    list = list.filter(function (x) { return x && x.id !== pk.id; });
+    list.push(pk); list = list.slice(-5);
+    try { store.set('dl-pending', JSON.stringify(list)); } catch (e) { }
+    return 'FQS1:' + b64url(JSON.stringify({ v: 1, s: list.slice(-3) }));
+  }
+  function copyText(t) {
+    return new Promise(function (res) {
+      function old() {
+        try {
+          var ta = document.createElement('textarea'); ta.value = t; ta.setAttribute('readonly', ''); ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0';
+          document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, t.length);
+          var ok = document.execCommand('copy'); document.body.removeChild(ta); res(!!ok);
+        } catch (e) { res(false); }
+      }
+      try { if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(t).then(function () { res(true); }, old); return; } } catch (e) { }
+      old();
+    });
+  }
+  /* one tap: copy, say so, and (from the Français Quotidien button) open the app */
+  function sendToApp(go) {
+    var q = S.q, code = (q && q.code) || returnCode();
+    if (!code) { if (go) location.href = FQ_URL; return; }
+    copyText(code).then(function (ok) {
+      var n = document.getElementById('sumSendNote'), area = document.getElementById('sumCode');
+      if (ok) {
+        if (n) n.textContent = go ? 'Copied. Opening the app: Progrès, Parler, paste.' : 'Copied. In Français Quotidien open Progrès, then Parler, and paste.';
+        if (area) area.hidden = true;
+        if (go) setTimeout(function () { location.href = FQ_URL; }, 450);
+      } else {
+        if (n) n.textContent = 'Could not copy by itself. Select the code below, copy it, then paste it in Français Quotidien (Progrès, Parler).';
+        if (area) { area.hidden = false; area.value = code; try { area.focus(); area.select(); area.setSelectionRange(0, code.length); } catch (e) { } }
+      }
+    });
+  }
+
   /* ---------- a session from a link: the sentences come in the link, the summary comes at the end ---------- */
   function showSummary() {
     if (!S.q) return;
@@ -2600,9 +2702,11 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
       h('p', { class: 'plain', text: checked ? got + ' of ' + words + ' words understood (words the recogniser matched, over the sentences you recorded).' : (keys.length ? 'Words were not checked in this session.' : 'You did not record any sentence.') })
     ]);
     if (top.length) { c.appendChild(h('p', { class: 'lb', style: 'margin-top:12px', text: 'Sons à travailler' })); c.appendChild(patternChips(top)); }
-    c.appendChild(h('div', { class: 'row wrapr', style: 'margin-top:14px' }, [
-      h('a', { class: 'btn', id: 'sumBack', href: FQ_URL, html: ICON.prev + '<span>Français Quotidien</span>' }),
-      h('button', { type: 'button', class: 'btn', id: 'sumAgain', html: ICON.again + '<span>Again</span>', onclick: function () { q.i = 0; q.done = {}; q.summary = false; renderSummary(); updateSentence(); clearResult(); setDock(); } })
+    q.code = returnCode();
+    if (q.code) c.appendChild(h('div', { id: 'sumSend' }, [h('p', { class: 'plain', id: 'sumSendNote', role: 'status', text: 'To keep this session in Français Quotidien, copy it and paste it there (Progrès, Parler).' }), h('button', { type: 'button', class: 'btn', id: 'sumCopy', html: '<span>Copy session</span>', onclick: function () { sendToApp(false); } }), h('textarea', { id: 'sumCode', readonly: true, hidden: true, rows: '3', 'aria-label': 'Session code' })]));
+    c.appendChild(h('div', { class: 'row wrapr', style: 'margin-top:10px' }, [
+      h('a', { class: 'btn', id: 'sumBack', href: FQ_URL, html: ICON.prev + '<span>Français Quotidien</span>', onclick: function (e) { if (!q.code) return; e.preventDefault(); sendToApp(true); } }),
+      h('button', { type: 'button', class: 'btn', id: 'sumAgain', html: ICON.again + '<span>Again</span>', onclick: function () { q.i = 0; q.done = {}; q.summary = false; q.t0 = Date.now(); q.code = ''; renderSummary(); updateSentence(); clearResult(); setDock(); } })
     ]));
     box.appendChild(c);
   }
@@ -2762,7 +2866,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
     });
     if (S.q && !S.custom.trim()) {
       var miss = (res.words || []).filter(function (w) { return !w.ok; }).length;
-      S.q.done[S.q.i] = { sentence: res.target, ok: res.words ? miss === 0 : res.coach.kind === 'good', nWords: res.words ? res.words.length : null, nMissed: res.words ? miss : null, patterns: pats };
+      S.q.done[S.q.i] = { sentence: res.target, ok: res.words ? miss === 0 : res.coach.kind === 'good', nWords: res.words ? res.words.length : null, nMissed: res.words ? miss : null, patterns: pats, missed: (res.words || []).filter(function (w) { return !w.ok; }).map(function (w) { return w.raw; }) };
       paintQDots();
     }
     renderStrip();
@@ -3187,7 +3291,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = TXT;
     }
     closeSheet();
     if (q.q) {
-      S.q = { list: q.q, i: 0, done: {}, summary: false };
+      S.q = { list: q.q, i: 0, done: {}, summary: false, t0: Date.now() };
       S.custom = ''; var inq = $('custom'); if (inq) inq.value = ''; openCustomRow(false);
       showMode('phrases'); stopSpeech(); clearResult(); updateSentence(); renderSummary(); renderStrip(); setDock(); window.scrollTo(0, 0);
     } else if (q.s != null) {
